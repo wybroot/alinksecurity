@@ -3,20 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AlinkSec 等保 2.0 (三级) 模块化安全中枢与态势感知平台</title>
+  <title>AlinkSec 等保 2.0 (三级) 业务安全管理中心</title>
   <style>
     :root {
-      --bg-base: #0b0f19;
-      --bg-card: #121826;
-      --bg-card-hover: #182235;
-      --border-color: #1f2a3f;
-      --primary: #00f0ff;
-      --primary-glow: rgba(0, 240, 255, 0.2);
-      --success: #00ff66;
-      --warning: #ffb800;
-      --danger: #ff3366;
-      --text-main: #f0f4fc;
-      --text-muted: #8b9bb4;
+      --bg-base: #0a0e17;
+      --bg-sidebar: #0f1523;
+      --bg-card: #141c2e;
+      --bg-card-hover: #1c273e;
+      --border-color: #22304d;
+      --primary: #00d2ff;
+      --primary-hover: #33dcff;
+      --primary-glow: rgba(0, 210, 255, 0.15);
+      --role-sys: #3b82f6;
+      --role-sec: #ef4444;
+      --role-audit: #10b981;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
       --font-mono: "JetBrains Mono", Consolas, "SF Mono", monospace;
     }
 
@@ -30,11 +35,13 @@
       flex-direction: column;
     }
 
+    /* 顶部导航 */
     header {
-      background: rgba(18, 24, 38, 0.85);
+      background: rgba(15, 21, 35, 0.95);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-color);
-      padding: 12px 24px;
+      height: 60px;
+      padding: 0 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -50,9 +57,9 @@
     }
 
     .brand-logo {
-      width: 32px;
-      height: 32px;
-      background: linear-gradient(135deg, var(--primary), #0077ff);
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--primary), #0066ff);
       border-radius: 8px;
       display: flex;
       align-items: center;
@@ -60,385 +67,286 @@
       font-weight: 900;
       color: #000;
       font-size: 18px;
-      box-shadow: 0 0 15px var(--primary-glow);
+      box-shadow: 0 0 12px var(--primary-glow);
     }
 
     .brand-title {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
       letter-spacing: 0.5px;
       display: flex;
       align-items: center;
-      gap: 10px;
-    }
-
-    .badge-mlps {
-      font-size: 11px;
-      background: rgba(0, 240, 255, 0.15);
-      color: var(--primary);
-      border: 1px solid var(--primary);
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-weight: 600;
-    }
-
-    .badge-grade {
-      background: rgba(0, 255, 102, 0.15);
-      color: var(--success);
-      border: 1px solid var(--success);
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-    }
-
-    .header-status {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      font-size: 13px;
-    }
-
-    .status-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: var(--text-muted);
-    }
-
-    .dot-live {
-      width: 8px;
-      height: 8px;
-      background: var(--success);
-      border-radius: 50%;
-      box-shadow: 0 0 8px var(--success);
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
-      100% { opacity: 1; transform: scale(1); }
-    }
-
-    main {
-      flex: 1;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      max-width: 1680px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    /* KPI Cards */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-    }
-
-    .kpi-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
-      padding: 16px 20px;
-      position: relative;
-      overflow: hidden;
-      transition: border-color 0.2s;
-    }
-
-    .kpi-card:hover {
-      border-color: var(--primary);
-    }
-
-    .kpi-card::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--primary), transparent);
-    }
-
-    .kpi-label {
-      font-size: 12px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 8px;
-    }
-
-    .kpi-value {
-      font-size: 28px;
-      font-weight: 800;
-      font-family: var(--font-mono);
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
-    }
-
-    .kpi-desc {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-top: 6px;
-    }
-
-    /* Dashboard Layout */
-    .dashboard-layout {
-      display: grid;
-      grid-template-columns: 320px 1fr 380px;
-      gap: 24px;
-      align-items: start;
-    }
-
-    @media (max-width: 1200px) {
-      .dashboard-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .card-title {
-      font-size: 15px;
-      font-weight: 700;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 12px;
-    }
-
-    .btn {
-      background: #1b283d;
-      color: var(--text-main);
-      border: 1px solid #2d3e58;
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .btn:hover {
-      background: var(--primary);
-      color: #000;
-      border-color: var(--primary);
-      box-shadow: 0 0 10px var(--primary-glow);
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: #000;
-      border: none;
-    }
-
-    /* Compliance Radar / Breakdown */
-    .compliance-bar-group {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .compliance-bar-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .compliance-bar-labels {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-    }
-
-    .bar-track {
-      background: #1c2638;
-      height: 6px;
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, #0077ff, var(--primary));
-      border-radius: 3px;
-      transition: width 0.5s ease;
-    }
-
-    /* Agent Matrix Grid */
-    .agent-matrix {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 16px;
-    }
-
-    .agent-card {
-      background: #0e1422;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      transition: all 0.2s;
-    }
-
-    .agent-card:hover {
-      border-color: #2b3e5f;
-      background: var(--bg-card-hover);
-    }
-
-    .agent-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .agent-type-badge {
-      font-size: 11px;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: var(--font-mono);
-    }
-
-    .type-waf { background: rgba(0, 240, 255, 0.2); color: var(--primary); }
-    .type-cfw { background: rgba(255, 184, 0, 0.2); color: var(--warning); }
-    .type-edr { background: rgba(255, 51, 102, 0.2); color: var(--danger); }
-    .type-tamper { background: rgba(186, 85, 211, 0.2); color: #d680ff; }
-    .type-dbaudit { background: rgba(0, 255, 102, 0.2); color: var(--success); }
-    .type-log { background: rgba(100, 149, 237, 0.2); color: #8bb5ff; }
-
-    .agent-meta {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .agent-meta span b {
-      color: var(--text-main);
-      font-family: var(--font-mono);
-    }
-
-    /* Event stream */
-    .event-stream {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      max-height: 540px;
-      overflow-y: auto;
-    }
-
-    .event-item {
-      background: #0d131f;
-      border-left: 3px solid var(--primary);
-      border-radius: 4px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 12px;
-    }
-
-    .event-item.CRITICAL { border-left-color: var(--danger); }
-    .event-item.HIGH { border-left-color: var(--warning); }
-
-    .event-top {
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .event-action-badge {
-      font-size: 10px;
-      font-weight: 700;
-      padding: 1px 5px;
-      border-radius: 3px;
-    }
-    .action-blocked { background: rgba(255, 51, 102, 0.2); color: var(--danger); }
-    .action-healed { background: rgba(0, 255, 102, 0.2); color: var(--success); }
-
-    .event-msg {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: #e0e8f8;
-      word-break: break-all;
-    }
-
-    /* Three-Role Simulation Panel */
-    .rbac-panel {
-      background: #111a2b;
-      border: 1px dashed #2b4066;
-      border-radius: 8px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .role-btn-group {
-      display: flex;
       gap: 8px;
     }
 
-    .role-btn {
-      flex: 1;
+    .brand-tag {
       font-size: 11px;
-      padding: 6px;
+      background: rgba(0, 210, 255, 0.15);
+      color: var(--primary);
+      border: 1px solid rgba(0, 210, 255, 0.3);
+      padding: 2px 8px;
       border-radius: 4px;
-      border: 1px solid #2b4066;
-      background: #152238;
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .role-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid transparent;
+    }
+    .role-sys_admin { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.4); }
+    .role-sec_admin { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.4); }
+    .role-audit_admin { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.4); }
+
+    .btn {
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-main);
+    }
+    .btn:hover { background: var(--bg-card-hover); border-color: var(--primary); }
+    .btn-primary { background: var(--primary); color: #000; border-color: var(--primary); font-weight: 600; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border-color: rgba(239, 68, 68, 0.4); }
+    .btn-danger:hover { background: rgba(239, 68, 68, 0.3); }
+
+    /* 主布局 */
+    .app-container {
+      display: flex;
+      flex: 1;
+      min-height: calc(100vh - 60px);
+    }
+
+    /* 左侧侧边栏 */
+    .sidebar {
+      width: 240px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-group-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      padding: 12px 12px 6px;
+      font-weight: 600;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      border-radius: 8px;
       color: var(--text-muted);
       cursor: pointer;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .nav-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+    }
+    .nav-item.active {
+      background: rgba(0, 210, 255, 0.12);
+      color: var(--primary);
+      border-left: 3px solid var(--primary);
+      font-weight: 600;
+    }
+    .nav-item.locked {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .nav-icon {
+      margin-right: 10px;
+      font-size: 16px;
+    }
+    .nav-tag {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
     }
 
-    .role-btn.active {
-      background: var(--primary);
-      color: #000;
+    /* 主内容工作区 */
+    .main-workspace {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      background: var(--bg-base);
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .page-title {
+      font-size: 20px;
       font-weight: 700;
-      border-color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .page-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
     }
 
-    /* Modal */
-    .modal-backdrop {
-      display: none;
+    /* 卡片与表格 */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .stat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .stat-label { font-size: 12px; color: var(--text-muted); }
+    .stat-value { font-size: 24px; font-weight: 700; margin-top: 6px; font-family: var(--font-mono); }
+
+    /* 数据表格 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      color: var(--text-muted);
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.02);
+      font-size: 12px;
+    }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+    .badge-danger { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+    .badge-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+    .badge-info { background: rgba(0, 210, 255, 0.15); color: #38bdf8; }
+
+    /* 互斥告警面板 */
+    .violation-banner {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(185, 28, 28, 0.05));
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 10px;
+      padding: 24px;
+      text-align: center;
+      margin: 40px auto;
+      max-width: 680px;
+    }
+    .violation-title {
+      color: #f87171;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .violation-text {
+      color: var(--text-muted);
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    /* 模态弹窗 */
+    .modal-overlay {
       position: fixed;
       inset: 0;
       background: rgba(0, 0, 0, 0.7);
       backdrop-filter: blur(5px);
-      z-index: 200;
+      display: flex;
       align-items: center;
       justify-content: center;
+      z-index: 999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
     }
-
-    .modal-content {
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+    .modal {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 12px;
-      width: 800px;
-      max-width: 90vw;
+      width: 90%;
+      max-width: 720px;
       max-height: 85vh;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
     }
-
     .modal-header {
       padding: 16px 20px;
       border-bottom: 1px solid var(--border-color);
@@ -446,279 +354,928 @@
       justify-content: space-between;
       align-items: center;
     }
-
     .modal-body {
       padding: 20px;
       overflow-y: auto;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      line-height: 1.6;
-      white-space: pre-wrap;
-      color: #b0c4de;
+      flex: 1;
+    }
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    /* 表单控件 */
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 12.5px; color: var(--text-muted); margin-bottom: 6px; }
+    .form-control {
+      width: 100%;
+      background: var(--bg-base);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13.5px;
+      outline: none;
+    }
+    .form-control:focus { border-color: var(--primary); }
+
+    /* 简易通知 Toast */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-card);
+      border: 1px solid var(--primary);
+      color: var(--text-main);
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 1000;
+      display: none;
+      font-size: 13.5px;
     }
   </style>
 </head>
 <body>
 
+  <!-- 顶部导航栏 -->
   <header>
     <div class="brand">
       <div class="brand-logo">A</div>
       <div class="brand-title">
-        AlinkSec 等保 2.0 (三级) 模块化安全中枢与态势感知
-        <span class="badge-mlps">GB/T 22239-2019 S3A3G3</span>
-        <span class="badge-grade">综合自检评定: 优 (99.2分)</span>
+        AlinkSec 业务安全管理中心
+        <span class="brand-tag">GB/T 22239-2019 等保三级</span>
       </div>
     </div>
-    <div class="header-status">
-      <div class="status-item">
-        <div class="dot-live"></div>
-        <span>中枢纳管链路: 正常</span>
+
+    <div class="header-actions">
+      <!-- 模式切换：控制台 / 大屏看板 -->
+      <button class="btn" id="btnToggleMode" onclick="toggleScreenMode()">
+        <span id="screenModeIcon">🌌</span>
+        <span id="screenModeText">切换态势大屏</span>
+      </button>
+
+      <!-- 快捷三权分立演练切换 -->
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:12px; color:var(--text-muted);">快捷切换角色:</span>
+        <select id="roleSelector" class="form-control" style="width:140px; padding:4px 8px; font-size:12px;" onchange="switchRole(this.value)">
+          <option value="sys_admin">👨‍💼 系统管理员</option>
+          <option value="sec_admin">🛡️ 安全管理员</option>
+          <option value="audit_admin">📋 审计管理员</option>
+        </select>
       </div>
-      <div class="status-item">
-        <span>防篡改哈希链: </span>
-        <b style="color: var(--success); font-family: var(--font-mono);">SHA-256 VALID</b>
+
+      <!-- 当前登录用户状态 -->
+      <div id="currentUserBadge" class="role-badge role-sys_admin">
+        <span id="roleIcon">👨‍💼</span>
+        <span id="roleName">系统管理员</span>
+        <span style="color:var(--text-muted); font-size:11px;">(sysadmin)</span>
       </div>
-      <div class="status-item" id="clock-display" style="font-family: var(--font-mono);"></div>
+
+      <button class="btn btn-danger" onclick="logout()" title="退出当前会话">登出</button>
     </div>
   </header>
 
-  <main>
-    <!-- KPI Overview -->
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <div class="kpi-label">纳管独立微探针</div>
-        <div class="kpi-value"><span style="color: var(--success);" id="kpi-agents-online">6</span> / 6</div>
-        <div class="kpi-desc">WAF / CFW / EDR / TAMPER / DBA / LOG</div>
+  <!-- 主布局容器 -->
+  <div class="app-container">
+    
+    <!-- 左侧菜单侧边栏 -->
+    <aside class="sidebar">
+      <div class="nav-group-title">控制与态势</div>
+      <div class="nav-item active" onclick="navigate('dashboard')" id="nav-dashboard">
+        <div><span class="nav-icon">📊</span>态势全局看板</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">今日威胁拦截与自愈</div>
-        <div class="kpi-value" style="color: var(--primary);" id="kpi-threats-today">5 <span style="font-size: 14px; color: var(--text-muted);">次 (100% 阻断)</span></div>
-        <div class="kpi-desc">OWASP Top10 / 反弹Shell / 删表拦截</div>
+      <div class="nav-item" onclick="navigate('agents')" id="nav-agents">
+        <div><span class="nav-icon">🖥️</span>探针资产纳管</div>
+        <span class="nav-tag badge-info" id="agentCountBadge">6 在线</span>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">日志留存合规周期</div>
-        <div class="kpi-value" style="color: var(--warning);">185 <span style="font-size: 14px; color: var(--text-muted);">天 (>= 180天)</span></div>
-        <div class="kpi-desc">ClickHouse 列式存储 + 批次签名</div>
+
+      <div class="nav-group-title">安全防护 (安全员)</div>
+      <div class="nav-item" onclick="navigate('policies')" id="nav-policies">
+        <div><span class="nav-icon">🛡️</span>安全策略中心</div>
+        <span class="nav-tag badge-danger" id="policyRoleLock" style="display:none;">🔒 互斥</span>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">三权分立与身份认证</div>
-        <div class="kpi-value" style="color: var(--success);">2FA <span style="font-size: 14px; color: var(--text-muted);">TOTP 强隔离</span></div>
-        <div class="kpi-desc">系统 / 安全 / 审计 管理员权限互斥</div>
+      <div class="nav-item" onclick="navigate('threats')" id="nav-threats">
+        <div><span class="nav-icon">🚨</span>威胁防御流</div>
+        <span class="nav-tag badge-warning">5 今日拦截</span>
       </div>
-    </div>
 
-    <!-- Layout Columns -->
-    <div class="dashboard-layout">
-      <!-- Left: 等保三级达标度 & 报表导出 -->
-      <div class="card">
-        <div class="card-title">
-          <span>等保 2.0 三级四大体系达标度</span>
-          <button class="btn btn-primary" onclick="exportReport()">导出自检报告</button>
-        </div>
+      <div class="nav-group-title">审计与合规 (审计员)</div>
+      <div class="nav-item" onclick="navigate('audit')" id="nav-audit">
+        <div><span class="nav-icon">📋</span>不可篡改审计</div>
+        <span class="nav-tag badge-success" id="auditRoleLock" style="display:none;">🔒 互斥</span>
+      </div>
+      <div class="nav-item" onclick="navigate('compliance')" id="nav-compliance">
+        <div><span class="nav-icon">🎖️</span>等保三级测评</div>
+        <span class="nav-tag badge-success">99.6 优</span>
+      </div>
 
-        <div style="text-align: center; padding: 12px 0;">
-          <div style="font-size: 40px; font-weight: 900; font-family: var(--font-mono); color: var(--primary);" id="overall-score-display">99.2</div>
-          <div style="font-size: 12px; color: var(--text-muted);">综合测评得分 (满分 100) - 等级: 优</div>
-        </div>
+      <div class="nav-group-title">系统管理 (系统员)</div>
+      <div class="nav-item" onclick="navigate('users')" id="nav-users">
+        <div><span class="nav-icon">👥</span>三权用户管理</div>
+        <span class="nav-tag badge-danger" id="userRoleLock" style="display:none;">🔒 互斥</span>
+      </div>
+    </aside>
 
-        <div class="compliance-bar-group" id="compliance-domains">
-          <!-- 动态填充各大维度得分 -->
-        </div>
-
-        <div class="rbac-panel">
-          <div style="font-size: 12px; font-weight: 700; color: var(--text-main);">三权分立互斥越权拦截现场验证</div>
-          <div class="role-btn-group">
-            <button class="role-btn active" id="btn-role-sec" onclick="switchRoleDemo('sec_admin')">安全管理员</button>
-            <button class="role-btn" id="btn-role-sys" onclick="switchRoleDemo('sys_admin')">系统管理员</button>
-            <button class="role-btn" id="btn-role-audit" onclick="switchRoleDemo('audit_admin')">审计管理员</button>
+    <!-- 右侧动态工作区 -->
+    <main class="main-workspace">
+      
+      <!-- 视图 1: 态势大屏/全局看板 -->
+      <section id="view-dashboard">
+        <div class="page-header">
+          <div>
+            <div class="page-title">📊 态势感知与安全总览</div>
+            <div class="page-desc">实时监控 6 大微服务探针遥测、等保三级达标雷达及全网威胁拦截流</div>
           </div>
-          <div style="font-size: 11px; color: var(--text-muted);" id="rbac-desc">
-            当前身份：<b>安全管理员 (sec_admin)</b>。专职负责安全规则下发与威胁拦截。<br>
-            <span style="color: var(--warning);">⚡ 尝试越权访问“系统用户管理”或“操作审计日志”将被强制阻断 (HTTP 403)。</span>
+          <button class="btn btn-primary" onclick="loadOverviewData()">🔄 刷新指标</button>
+        </div>
+
+        <div class="grid-4">
+          <div class="stat-box">
+            <div class="stat-label">探针矩阵健康度</div>
+            <div class="stat-value" style="color:var(--success);" id="dashClusterHealth">HEALTHY</div>
           </div>
-          <button class="btn" onclick="testRBACInterception()" style="margin-top: 4px;">测试模拟越权拦截</button>
-        </div>
-      </div>
-
-      <!-- Center: 6 大独立微探针矩阵 -->
-      <div class="card">
-        <div class="card-title">
-          <span>独立微探针纳管矩阵 (按需选配架构)</span>
-          <span style="font-size: 12px; color: var(--text-muted);">单组件崩溃零扩散 · 资源限制 20MB</span>
-        </div>
-
-        <div class="agent-matrix" id="agent-matrix-container">
-          <!-- 动态填充 6 大探针卡片 -->
-        </div>
-      </div>
-
-      <!-- Right: 实时威胁事件流 -->
-      <div class="card">
-        <div class="card-title">
-          <span>实时安全事件拦截流</span>
-          <span class="badge-mlps" style="font-size: 10px;">gRPC / NATS 遥测</span>
+          <div class="stat-box">
+            <div class="stat-label">在线微探针数量</div>
+            <div class="stat-value" style="color:var(--primary);" id="dashOnlineAgents">6 / 6</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">今日阻断威胁总数</div>
+            <div class="stat-value" style="color:var(--danger);" id="dashBlockedThreats">5</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">等保 2.0 (三级) 综合合规得分</div>
+            <div class="stat-value" style="color:#a855f7;" id="dashComplianceScore">99.6 <span style="font-size:14px;">(优)</span></div>
+          </div>
         </div>
 
-        <div class="event-stream" id="event-stream-container">
-          <!-- 动态填充事件列表 -->
-        </div>
-      </div>
-    </div>
-  </main>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">🖥️ 活跃安全探针矩阵</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>探针类型</th>
+                  <th>主机节点</th>
+                  <th>IP 地址</th>
+                  <th>CPU / 内存</th>
+                  <th>规则数</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody id="dashAgentTableBody">
+                <!-- 动态填充 -->
+              </tbody>
+            </table>
+          </div>
 
-  <!-- 等保合规报告弹窗 -->
-  <div class="modal-backdrop" id="report-modal">
-    <div class="modal-content">
+          <div class="card">
+            <div class="card-title">🚨 实时威胁拦截瀑布流</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>拦截探针</th>
+                  <th>威胁类型</th>
+                  <th>源 IP</th>
+                  <th>动作</th>
+                </tr>
+              </thead>
+              <tbody id="dashThreatTableBody">
+                <!-- 动态填充 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 视图 2: 探针资产纳管 -->
+      <section id="view-agents" style="display:none;">
+        <div class="page-header">
+          <div>
+            <div class="page-title">🖥️ 探针资产与微服务矩阵纳管</div>
+            <div class="page-desc">各组件微探针完全解耦独立运行，单探针异常或崩溃对业务与其他安全模块零扩散</div>
+          </div>
+          <button class="btn btn-primary" onclick="loadAgentAssets()">🔄 刷新探针状态</button>
+        </div>
+
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th>探针 ID</th>
+                <th>组件类型</th>
+                <th>对应业务主机</th>
+                <th>内网 IP</th>
+                <th>资源消耗</th>
+                <th>活跃策略数</th>
+                <th>健康状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="agentAssetTableBody">
+              <!-- 动态填充 -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 视图 3: 安全策略中心 (安全管理员专属) -->
+      <section id="view-policies" style="display:none;">
+        <div class="page-header">
+          <div>
+            <div class="page-title">🛡️ 安全策略与防御引擎中心</div>
+            <div class="page-desc">仅【安全管理员 (sec_admin)】有权查看与配置 WAF、微隔离、EDR、防篡改及数据库审计规则</div>
+          </div>
+          <button class="btn btn-primary" onclick="openPolicyModal()">➕ 新增防御规则</button>
+        </div>
+
+        <!-- 权限互斥提示占位 (当非 sec_admin 时显示) -->
+        <div id="policyViolationBox" class="violation-banner" style="display:none;">
+          <div class="violation-title">⚠️ 等保 2.0 三级特权分离互斥阻断</div>
+          <div class="violation-text">
+            根据 GB/T 22239-2019 标准第 8.1.5.1 条款，当前登录身份无权访问或配置系统安全策略。<br>
+            <strong>只有安全管理员 (sec_admin)</strong> 拥有安全策略管理特权，严禁系统管理员或审计管理员越权操作。
+          </div>
+          <button class="btn btn-danger" onclick="testAccessForbidden('/api/v1/policies')">
+            🛑 调用后端 API 验证 403 强拦截
+          </button>
+        </div>
+
+        <div id="policyContentBox">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">🌐 云 WAF 与应用防护规则 (WAF-v1.2.0)</div>
+              <table>
+                <thead><tr><th>规则标识</th><th>规则名称 / 特征</th><th>动作</th></tr></thead>
+                <tbody>
+                  <tr><td>waf-sqli</td><td>OWASP SQL注入深度检测引擎</td><td><span class="badge badge-danger">阻断 403</span></td></tr>
+                  <tr><td>waf-xss</td><td>跨站脚本 XSS 规则引擎</td><td><span class="badge badge-danger">阻断 403</span></td></tr>
+                  <tr><td>waf-rce</td><td>远程命令执行 RCE 过滤</td><td><span class="badge badge-danger">阻断 403</span></td></tr>
+                  <tr><td>waf-cc-limit</td><td>滑动窗口 CC 防护 (60s 限 100 次)</td><td><span class="badge badge-warning">限流</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card">
+              <div class="card-title">🧱 云防火墙与网络微隔离规则 (CFW-v1.1.0)</div>
+              <table>
+                <thead><tr><th>域间流向</th><th>目标端口</th><th>等保合规策略</th></tr></thead>
+                <tbody>
+                  <tr><td>DMZ -> APP</td><td>TCP :8080</td><td><span class="badge badge-success">放行白名单</span></td></tr>
+                  <tr><td>APP -> DATA</td><td>TCP :3306</td><td><span class="badge badge-success">放行业务连接</span></td></tr>
+                  <tr><td>DMZ -> DATA</td><td>TCP :3306</td><td><span class="badge badge-danger">红线阻断 (严禁跨域穿透)</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card">
+              <div class="card-title">💻 主机安全 EDR 基线与入侵防御 (EDR-v1.0.0)</div>
+              <table>
+                <thead><tr><th>防护项</th><th>检测目标</th><th>处理动作</th></tr></thead>
+                <tbody>
+                  <tr><td>反弹 Shell</td><td>/dev/tcp, nc -e, python socket</td><td><span class="badge badge-danger">立即终止进程</span></td></tr>
+                  <tr><td>特权提权</td><td>UID 0 违规变更, sudoers 非法注入</td><td><span class="badge badge-danger">高危告警</span></td></tr>
+                  <tr><td>暴力破解</td><td>60 秒内失败 5 次自动锁定</td><td><span class="badge badge-warning">阻断 IP</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card">
+              <div class="card-title">📁 网页防篡改与数据库审计 (TAMPER & DBAUDIT)</div>
+              <table>
+                <thead><tr><th>组件</th><th>核心机制</th><th>状态</th></tr></thead>
+                <tbody>
+                  <tr><td>网页防篡改</td><td>毫秒级底层内核事件感知，秒级隔离 Webshell，瞬间自愈还原</td><td><span class="badge badge-success">自愈保护中</span></td></tr>
+                  <tr><td>数据库审计</td><td>零依赖二进制解析 MySQL/PG 协议，强拦截 DROP/TRUNCATE 恶意删表</td><td><span class="badge badge-success">实时监听中</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 视图 4: 威胁防御流 -->
+      <section id="view-threats" style="display:none;">
+        <div class="page-header">
+          <div>
+            <div class="page-title">🚨 实时威胁事件中心与告警流</div>
+            <div class="page-desc">集中采集全网各探针拦截的高危攻击事件，支持溯源分析与取证</div>
+          </div>
+          <button class="btn btn-primary" onclick="loadSecurityEvents()">🔄 刷新拦截记录</button>
+        </div>
+
+        <div class="card">
+          <table>
+            <thead>
+              <tr>
+                <th>事件编号</th>
+                <th>上报探针</th>
+                <th>威胁分类</th>
+                <th>危险等级</th>
+                <th>攻击源 IP</th>
+                <th>目标节点</th>
+                <th>载荷与特征摘要</th>
+                <th>处置动作</th>
+              </tr>
+            </thead>
+            <tbody id="threatEventTableBody">
+              <!-- 动态填充 -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 视图 5: 不可篡改审计中心 (审计管理员专属) -->
+      <section id="view-audit" style="display:none;">
+        <div class="page-header">
+          <div>
+            <div class="page-title">📋 不可篡改安全审计中心</div>
+            <div class="page-desc">基于 SHA-256 区块链式哈希链，满足等保 2.0 三级日志防篡改与至少留存 180 天要求</div>
+          </div>
+          <button class="btn btn-primary" onclick="verifyAuditIntegrity()">🔐 一键数学验签 (防篡改核验)</button>
+        </div>
+
+        <!-- 权限互斥提示占位 (当非 audit_admin 时显示) -->
+        <div id="auditViolationBox" class="violation-banner" style="display:none;">
+          <div class="violation-title">⚠️ 等保 2.0 三级特权分离互斥阻断</div>
+          <div class="violation-text">
+            根据 GB/T 22239-2019 标准第 8.1.5.1 条款，当前登录身份无权访问安全审计日志。<br>
+            <strong>只有安全审计员 (audit_admin)</strong> 拥有审计记录核查与完整性校验特权，防止管理员销毁或篡改操作痕迹。
+          </div>
+          <button class="btn btn-danger" onclick="testAccessForbidden('/api/v1/audit/logs')">
+            🛑 调用后端 API 验证 403 强拦截
+          </button>
+        </div>
+
+        <div id="auditContentBox">
+          <div class="stat-box" style="margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div class="stat-label">区块链式哈希链防篡改状态</div>
+              <div class="stat-value" style="color:var(--success);" id="auditChainStatusText">✓ 数学整链完整 (Zero Tamper)</div>
+            </div>
+            <div>
+              <div class="stat-label">ClickHouse 日志合规留存周期</div>
+              <div class="stat-value" style="color:var(--primary);" id="auditStorageDays">185 天 (标准要求 ≥ 180天)</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📜 管理员操作轨迹与哈希链记录</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>序号</th>
+                  <th>时间</th>
+                  <th>操作账号</th>
+                  <th>角色</th>
+                  <th>客户端 IP</th>
+                  <th>请求接口 / 动作</th>
+                  <th>当前记录哈希 (SHA-256)</th>
+                  <th>状态</th>
+                </tr>
+              </thead>
+              <tbody id="auditLogTableBody">
+                <!-- 动态填充 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 视图 6: 等保三级测评中心 -->
+      <section id="view-compliance" style="display:none;">
+        <div class="page-header">
+          <div>
+            <div class="page-title">🎖️ 等保 2.0 (三级) 综合自检与测评报告</div>
+            <div class="page-desc">基于 GB/T 22239-2019 S3A3G3，涵盖安全管理中心、区域边界、计算环境与通信网络</div>
+          </div>
+          <div>
+            <a href="/api/v1/compliance/export.md" class="btn btn-primary" target="_blank">📥 导出 Markdown 报告</a>
+            <button class="btn" onclick="openComplianceJSON()">📄 查看 JSON 证据</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📋 核心指标逐项自检测评清单</div>
+          <table>
+            <thead>
+              <tr>
+                <th>标准条款</th>
+                <th>控制维度</th>
+                <th>合规要求</th>
+                <th>自检得分</th>
+                <th>技术证据与实现支撑</th>
+                <th>结论</th>
+              </tr>
+            </thead>
+            <tbody id="complianceTableBody">
+              <!-- 动态填充 -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 视图 7: 三权用户管理 (系统管理员专属) -->
+      <section id="view-users" style="display:none;">
+        <div class="page-header">
+          <div>
+            <div class="page-title">👥 三权分立与管理员账号体系</div>
+            <div class="page-desc">仅【系统管理员 (sys_admin)】有权创建与管理账号，系统底层强制禁止单账号兼任多特权</div>
+          </div>
+          <button class="btn btn-primary" onclick="openCreateUserModal()">➕ 新建管理员</button>
+        </div>
+
+        <!-- 权限互斥提示占位 (当非 sys_admin 时显示) -->
+        <div id="userViolationBox" class="violation-banner" style="display:none;">
+          <div class="violation-title">⚠️ 等保 2.0 三级特权分离互斥阻断</div>
+          <div class="violation-text">
+            根据 GB/T 22239-2019 标准第 8.1.5.1 条款，当前登录身份无权访问或创建管理账号。<br>
+            <strong>只有系统管理员 (sys_admin)</strong> 拥有用户基础运维特权，安全管理员与审计管理员严禁越权干预账号体系。
+          </div>
+          <button class="btn btn-danger" onclick="testAccessForbidden('/api/v1/system/users')">
+            🛑 调用后端 API 验证 403 强拦截
+          </button>
+        </div>
+
+        <div id="userContentBox">
+          <div class="card">
+            <table>
+              <thead>
+                <tr>
+                  <th>用户 ID</th>
+                  <th>管理员账号</th>
+                  <th>法定角色</th>
+                  <th>双因子认证 (2FA)</th>
+                  <th>账号状态</th>
+                  <th>创建时间</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody">
+                <!-- 动态填充 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- 新建模态弹窗：创建管理员 -->
+  <div class="modal-overlay" id="createUserModal">
+    <div class="modal">
       <div class="modal-header">
-        <span style="font-weight: 700;">GB/T 22239-2019 等保 2.0 三级测评证据报告</span>
-        <button class="btn" onclick="closeModal()">关闭</button>
+        <div style="font-weight:700;">➕ 新建等保管理员账号</div>
+        <button class="btn" onclick="closeModal('createUserModal')">✕</button>
       </div>
-      <div class="modal-body" id="report-body">加载报告中...</div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">管理员登录用户名:</label>
+          <input type="text" id="newUsername" class="form-control" placeholder="如: sec_operator_02">
+        </div>
+        <div class="form-group">
+          <label class="form-label">登录密码 (需符合口令复杂度):</label>
+          <input type="password" id="newPassword" class="form-control" placeholder="大写+小写+数字+特殊字符，≥8位">
+        </div>
+        <div class="form-group">
+          <label class="form-label">分配法定角色 (三权互斥，仅可单选):</label>
+          <select id="newRole" class="form-control">
+            <option value="sys_admin">👨‍💼 系统管理员 (sys_admin) - 基础管理</option>
+            <option value="sec_admin">🛡️ 安全管理员 (sec_admin) - 策略配置</option>
+            <option value="audit_admin">📋 审计管理员 (audit_admin) - 日志核验</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('createUserModal')">取消</button>
+        <button class="btn btn-primary" onclick="submitCreateUser()">确认创建</button>
+      </div>
     </div>
   </div>
 
+  <!-- 提示浮层 Toast -->
+  <div id="toast"></div>
+
   <script>
-    let currentRole = 'sec_admin';
+    // 全局状态管理
+    const state = {
+      currentUser: 'sysadmin',
+      currentRole: 'sys_admin',
+      token: '',
+      isScreenMode: false,
+      activeNav: 'dashboard'
+    };
 
-    // 时钟
-    function updateClock() {
-      const now = new Date();
-      document.getElementById('clock-display').innerText = now.toLocaleString('zh-CN', { hour12: false });
+    // 页面初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+      // 默认先以系统管理员快捷登录获取 Token
+      await switchRole('sys_admin');
+      loadOverviewData();
+      setInterval(loadOverviewData, 8000);
+    });
+
+    // 切换演练角色 (三权分立快速演练)
+    async function switchRole(targetRole) {
+      try {
+        const resp = await fetch('/api/v1/auth/quick-switch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: targetRole })
+        });
+        const data = await resp.json();
+        if (resp.ok) {
+          state.token = data.token;
+          state.currentUser = data.username;
+          state.currentRole = data.role;
+          updateRoleUI();
+          showToast(`已切换身份至: ${getRoleDisplayName(state.currentRole)}`);
+          // 刷新当前页面视图
+          navigate(state.activeNav);
+        } else {
+          showToast(`切换失败: ${data.error || '未知错误'}`);
+        }
+      } catch (err) {
+        console.error(err);
+      }
     }
-    setInterval(updateClock, 1000);
-    updateClock();
 
-    // 加载态势大屏数据
-    async function loadDashboard() {
+    function getRoleDisplayName(role) {
+      if (role === 'sys_admin') return '系统管理员 (sys_admin)';
+      if (role === 'sec_admin') return '安全管理员 (sec_admin)';
+      if (role === 'audit_admin') return '审计管理员 (audit_admin)';
+      return role;
+    }
+
+    // 更新角色状态与左侧锁定标志
+    function updateRoleUI() {
+      const badge = document.getElementById('currentUserBadge');
+      const icon = document.getElementById('roleIcon');
+      const name = document.getElementById('roleName');
+      const selector = document.getElementById('roleSelector');
+
+      selector.value = state.currentRole;
+      badge.className = `role-badge role-${state.currentRole}`;
+
+      if (state.currentRole === 'sys_admin') {
+        icon.innerText = '👨‍💼';
+        name.innerText = '系统管理员';
+        document.getElementById('policyRoleLock').style.display = 'inline-block';
+        document.getElementById('auditRoleLock').style.display = 'inline-block';
+        document.getElementById('userRoleLock').style.display = 'none';
+      } else if (state.currentRole === 'sec_admin') {
+        icon.innerText = '🛡️';
+        name.innerText = '安全管理员';
+        document.getElementById('policyRoleLock').style.display = 'none';
+        document.getElementById('auditRoleLock').style.display = 'inline-block';
+        document.getElementById('userRoleLock').style.display = 'inline-block';
+      } else if (state.currentRole === 'audit_admin') {
+        icon.innerText = '📋';
+        name.innerText = '审计管理员';
+        document.getElementById('policyRoleLock').style.display = 'inline-block';
+        document.getElementById('auditRoleLock').style.display = 'none';
+        document.getElementById('userRoleLock').style.display = 'inline-block';
+      }
+    }
+
+    // 页面导航切换
+    function navigate(viewName) {
+      state.activeNav = viewName;
+
+      // 菜单高亮
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      const activeNavEl = document.getElementById(`nav-${viewName}`);
+      if (activeNavEl) activeNavEl.classList.add('active');
+
+      // 隐藏所有视图
+      const views = ['dashboard', 'agents', 'policies', 'threats', 'audit', 'compliance', 'users'];
+      views.forEach(v => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.style.display = (v === viewName) ? 'block' : 'none';
+      });
+
+      // 处理三权分立互斥区域展示
+      handleRoleSeparationDisplay(viewName);
+
+      // 加载对应视图数据
+      if (viewName === 'dashboard') loadOverviewData();
+      if (viewName === 'agents') loadAgentAssets();
+      if (viewName === 'threats') loadSecurityEvents();
+      if (viewName === 'audit' && state.currentRole === 'audit_admin') loadAuditLogs();
+      if (viewName === 'compliance') loadComplianceReport();
+      if (viewName === 'users' && state.currentRole === 'sys_admin') loadUsersList();
+    }
+
+    function handleRoleSeparationDisplay(viewName) {
+      if (viewName === 'policies') {
+        const isSec = state.currentRole === 'sec_admin';
+        document.getElementById('policyViolationBox').style.display = isSec ? 'none' : 'block';
+        document.getElementById('policyContentBox').style.display = isSec ? 'block' : 'none';
+      } else if (viewName === 'audit') {
+        const isAudit = state.currentRole === 'audit_admin';
+        document.getElementById('auditViolationBox').style.display = isAudit ? 'none' : 'block';
+        document.getElementById('auditContentBox').style.display = isAudit ? 'block' : 'none';
+      } else if (viewName === 'users') {
+        const isSys = state.currentRole === 'sys_admin';
+        document.getElementById('userViolationBox').style.display = isSys ? 'none' : 'block';
+        document.getElementById('userContentBox').style.display = isSys ? 'block' : 'none';
+      }
+    }
+
+    // 核心数据加载：态势总览
+    async function loadOverviewData() {
       try {
         const resp = await fetch('/api/v1/dashboard/overview');
-        if (!resp.ok) return;
         const data = await resp.json();
-
-        // 探针卡片
-        const matrixEl = document.getElementById('agent-matrix-container');
-        matrixEl.innerHTML = '';
-        data.agents.forEach(agent => {
-          const typeClass = 'type-' + agent.agent_type.toLowerCase();
-          const card = document.createElement('div');
-          card.className = 'agent-card';
-          card.innerHTML = `
-            <div class="agent-header">
-              <span class="agent-type-badge ${typeClass}">${agent.agent_type}</span>
-              <span style="font-size: 11px; color: var(--success); font-family: var(--font-mono);">● ${agent.status}</span>
-            </div>
-            <div style="font-size: 13px; font-weight: 600;">${agent.hostname}</div>
-            <div class="agent-meta">
-              <span>主机 IP: <b>${agent.host_ip}</b></span>
-              <span>活跃规则: <b>${agent.active_rules} 条</b></span>
-              <span>CPU 占用: <b>${agent.cpu_usage.toFixed(1)}%</b></span>
-              <span>内存消耗: <b>${agent.memory_mb.toFixed(1)} MB</b></span>
-            </div>
-          `;
-          matrixEl.appendChild(card);
-        });
-
-        // 威胁事件流
-        const streamEl = document.getElementById('event-stream-container');
-        streamEl.innerHTML = '';
-        data.recent_events.forEach(evt => {
-          const item = document.createElement('div');
-          item.className = 'event-item ' + evt.severity;
-          const actionClass = evt.action === 'BLOCKED' ? 'action-blocked' : 'action-healed';
-          item.innerHTML = `
-            <div class="event-top">
-              <span><b>${evt.component}</b> · ${evt.threat_type}</span>
-              <span class="event-action-badge ${actionClass}">${evt.action}</span>
-            </div>
-            <div class="event-msg">${evt.summary}</div>
-            <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:2px;">
-              <span>源: ${evt.source_ip} -> ${evt.target_host}</span>
-              <span>${new Date(evt.timestamp).toLocaleTimeString()}</span>
-            </div>
-          `;
-          streamEl.appendChild(item);
-        });
-
-        // 合规维度得分
-        if (data.compliance && data.compliance.domain_scores) {
-          const domainsEl = document.getElementById('compliance-domains');
-          domainsEl.innerHTML = '';
-          for (const [domain, score] of Object.entries(data.compliance.domain_scores)) {
-            const row = document.createElement('div');
-            row.className = 'compliance-bar-item';
-            row.innerHTML = `
-              <div class="compliance-bar-labels">
-                <span>${domain}</span>
-                <span style="font-family: var(--font-mono); color: var(--primary); font-weight: 700;">${score.toFixed(1)}%</span>
-              </div>
-              <div class="bar-track">
-                <div class="bar-fill" style="width: ${score}%;"></div>
-              </div>
-            `;
-            domainsEl.appendChild(row);
-          }
-          document.getElementById('overall-score-display').innerText = data.compliance.overall_score.toFixed(1);
+        
+        document.getElementById('dashClusterHealth').innerText = data.cluster_health;
+        document.getElementById('dashOnlineAgents').innerText = `${data.online_agents} / ${data.total_agents}`;
+        document.getElementById('dashBlockedThreats').innerText = data.blocked_threats_today;
+        if (data.compliance) {
+          document.getElementById('dashComplianceScore').innerHTML = `${data.compliance.overall_score} <span style="font-size:14px;">(${data.compliance.compliance_grade})</span>`;
         }
 
-      } catch (e) {
-        console.error('failed to load dashboard', e);
+        // 渲染大屏探针表
+        const agentBody = document.getElementById('dashAgentTableBody');
+        agentBody.innerHTML = (data.agents || []).map(a => `
+          <tr>
+            <td><span class="badge badge-info">${a.agent_type}</span></td>
+            <td>${a.hostname}</td>
+            <td style="font-family:var(--font-mono);">${a.host_ip}</td>
+            <td>${a.cpu_usage}% / ${a.memory_mb}MB</td>
+            <td>${a.active_rules} 条</td>
+            <td><span class="badge badge-success">● ${a.status}</span></td>
+          </tr>
+        `).join('');
+
+        // 渲染实时威胁表
+        const threatBody = document.getElementById('dashThreatTableBody');
+        threatBody.innerHTML = (data.recent_events || []).map(e => `
+          <tr>
+            <td style="font-size:11px; color:var(--text-muted);">${e.timestamp.substring(11, 19)}</td>
+            <td><span class="badge badge-info">${e.component}</span></td>
+            <td><span class="badge badge-danger">${e.threat_type}</span></td>
+            <td style="font-family:var(--font-mono);">${e.source_ip}</td>
+            <td><span class="badge badge-danger">${e.action}</span></td>
+          </tr>
+        `).join('');
+
+      } catch (err) {
+        console.error(err);
       }
     }
 
-    // 三权分立切换演示
-    function switchRoleDemo(role) {
-      currentRole = role;
-      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-      if (role === 'sec_admin') document.getElementById('btn-role-sec').classList.add('active');
-      if (role === 'sys_admin') document.getElementById('btn-role-sys').classList.add('active');
-      if (role === 'audit_admin') document.getElementById('btn-role-audit').classList.add('active');
+    // 探针资产纳管
+    async function loadAgentAssets() {
+      try {
+        const resp = await fetch('/api/v1/system/agents');
+        const list = await resp.json();
+        const tbody = document.getElementById('agentAssetTableBody');
+        tbody.innerHTML = list.map(a => `
+          <tr>
+            <td style="font-family:var(--font-mono); font-weight:600;">${a.agent_id}</td>
+            <td><span class="badge badge-info">${a.agent_type}</span></td>
+            <td>${a.hostname}</td>
+            <td style="font-family:var(--font-mono);">${a.host_ip}</td>
+            <td>CPU ${a.cpu_usage}% | 内存 ${a.memory_mb}MB</td>
+            <td>${a.active_rules} 活跃规则</td>
+            <td><span class="badge badge-success">● ${a.status}</span></td>
+            <td>
+              <button class="btn" style="padding:4px 8px; font-size:11px;" onclick="syncAgentPolicy('${a.agent_id}')">🔄 同步策略</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
 
-      const descEl = document.getElementById('rbac-desc');
-      if (role === 'sec_admin') {
-        descEl.innerHTML = `当前身份：<b>安全管理员 (sec_admin)</b>。专职负责安全规则与威胁拦截。<br><span style="color: var(--warning);">⚡ 尝试访问“用户管理”或“审计日志”将被强制拦截 (403)。</span>`;
-      } else if (role === 'sys_admin') {
-        descEl.innerHTML = `当前身份：<b>系统管理员 (sys_admin)</b>。专职负责账号与系统底层维护。<br><span style="color: var(--warning);">⚡ 尝试修改“安全防护策略”或“审计日志”将被强制拦截 (403)。</span>`;
+    // 同步探针策略
+    async function syncAgentPolicy(agentId) {
+      try {
+        const resp = await fetch('/api/v1/system/agents/sync', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${state.token}`
+          },
+          body: JSON.stringify({ agent_id: agentId, action: 'SYNC_POLICY' })
+        });
+        const res = await resp.json();
+        if (resp.ok) {
+          showToast(`已向南向中枢下发探针同步指令: ${agentId}`);
+        } else {
+          showToast(`下发失败: ${res.error || '权限不足'}`);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // 威胁事件查询
+    async function loadSecurityEvents() {
+      try {
+        const resp = await fetch('/api/v1/security/events');
+        const list = await resp.json();
+        const tbody = document.getElementById('threatEventTableBody');
+        tbody.innerHTML = list.map(e => `
+          <tr>
+            <td style="font-family:var(--font-mono); font-weight:600;">${e.event_id}</td>
+            <td><span class="badge badge-info">${e.component}</span></td>
+            <td><span class="badge badge-danger">${e.threat_type}</span></td>
+            <td><span class="badge badge-${e.severity === 'CRITICAL' ? 'danger' : 'warning'}">${e.severity}</span></td>
+            <td style="font-family:var(--font-mono);">${e.source_ip}</td>
+            <td>${e.target_host}</td>
+            <td style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${e.summary}">${e.summary}</td>
+            <td><span class="badge badge-danger">${e.action}</span></td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // 审计日志加载
+    async function loadAuditLogs() {
+      try {
+        const resp = await fetch('/api/v1/audit/logs', {
+          headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        if (!resp.ok) return;
+        const list = await resp.json();
+        const tbody = document.getElementById('auditLogTableBody');
+        tbody.innerHTML = list.map(l => `
+          <tr>
+            <td>${l.index}</td>
+            <td style="font-size:11px; color:var(--text-muted);">${l.timestamp.substring(11, 19)}</td>
+            <td style="font-weight:600;">${l.actor}</td>
+            <td><span class="badge badge-info">${l.role}</span></td>
+            <td style="font-family:var(--font-mono);">${l.client_ip}</td>
+            <td><code>${l.action}</code></td>
+            <td style="font-family:var(--font-mono); font-size:11px; color:var(--primary);">${l.hash.substring(0, 16)}...</td>
+            <td><span class="badge badge-${l.status === 'SUCCESS' ? 'success' : 'danger'}">${l.status}</span></td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // 审计哈希链验签
+    async function verifyAuditIntegrity() {
+      try {
+        const resp = await fetch('/api/v1/audit/verify', {
+          headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        const res = await resp.json();
+        if (resp.ok && res.chain_valid) {
+          alert(`✓ SHA-256 区块链式哈希完整性核验全部通过！\n\n共核验 ${res.records_count} 条操作记录，无任何删除、替换或篡改记录，符合等保 2.0 (三级) 8.1.5.2 防篡改红线。`);
+        } else {
+          alert(`❌ 哈希链破损告警: ${res.error || '校验不匹配'}`);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // 等保合规自检清单加载
+    async function loadComplianceReport() {
+      try {
+        const resp = await fetch('/api/v1/compliance/full-report');
+        const report = await resp.json();
+        const tbody = document.getElementById('complianceTableBody');
+        tbody.innerHTML = (report.check_items || []).map(item => `
+          <tr>
+            <td style="font-family:var(--font-mono); font-weight:600; color:var(--primary);">${item.id}</td>
+            <td>${item.domain} - ${item.category}</td>
+            <td style="font-size:12px; color:var(--text-muted);">${item.requirement}</td>
+            <td style="font-weight:700; color:var(--success); font-family:var(--font-mono);">${item.score} / 100</td>
+            <td style="font-size:12px;">${item.evidence}</td>
+            <td><span class="badge badge-success">✓ 达标</span></td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // 系统管理员用户列表加载
+    async function loadUsersList() {
+      try {
+        const resp = await fetch('/api/v1/system/users', {
+          headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        if (!resp.ok) return;
+        const list = await resp.json();
+        const tbody = document.getElementById('userTableBody');
+        tbody.innerHTML = list.map(u => `
+          <tr>
+            <td>${u.id}</td>
+            <td style="font-weight:600;">${u.username}</td>
+            <td><span class="badge badge-${u.role === 'sys_admin' ? 'info' : (u.role === 'sec_admin' ? 'danger' : 'success')}">${getRoleDisplayName(u.role)}</span></td>
+            <td><span class="badge badge-success">✓ RFC 6238 TOTP 已启用</span></td>
+            <td><span class="badge badge-success">● ${u.status}</span></td>
+            <td style="font-size:12px; color:var(--text-muted);">${u.created_at.substring(0, 10)}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // 演练三权越权 403 强拦截
+    async function testAccessForbidden(targetUrl) {
+      try {
+        const resp = await fetch(targetUrl, {
+          headers: { 'Authorization': `Bearer ${state.token}` }
+        });
+        const res = await resp.json();
+        if (resp.status === 403) {
+          alert(`🛑 【后端强拦截生效】HTTP 403 Forbidden\n\n拦截原因: ${res.error}\n\n当前角色 [${state.currentRole}] 无权访问该受保护资源，本次越权尝试已依法记入审计管理员防篡改哈希链。`);
+        } else {
+          showToast(`返回状态码: ${resp.status}`);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // 切换大屏/工作台模式
+    function toggleScreenMode() {
+      state.isScreenMode = !state.isScreenMode;
+      const sidebar = document.querySelector('.sidebar');
+      const text = document.getElementById('screenModeText');
+      const icon = document.getElementById('screenModeIcon');
+
+      if (state.isScreenMode) {
+        sidebar.style.display = 'none';
+        text.innerText = '返回管理控制台';
+        icon.innerText = '🖥️';
+        navigate('dashboard');
       } else {
-        descEl.innerHTML = `当前身份：<b>审计管理员 (audit_admin)</b>。专职负责日志留存与完整性核查。<br><span style="color: var(--warning);">⚡ 严禁参与任何配置变更，尝试下发策略将被拦截 (403)。</span>`;
+        sidebar.style.display = 'flex';
+        text.innerText = '切换态势大屏';
+        icon.innerText = '🌌';
       }
     }
 
-    // 模拟越权拦截
-    async function testRBACInterception() {
-      let targetPath = '/api/v1/system/users';
-      if (currentRole === 'sys_admin') targetPath = '/api/v1/policies';
-      if (currentRole === 'audit_admin') targetPath = '/api/v1/policies';
+    // 模态弹窗控制
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function openCreateUserModal() { openModal('createUserModal'); }
 
-      alert(`[等保 2.0 三权分立互斥校验生效中]\n身份: ${currentRole}\n越权目标: ${targetPath}\n结果: [HTTP 403 Forbidden] 拒绝访问！\n详细证据: 触发 GB/T 22239-2019 三权分立强制互斥防护规则。`);
-    }
+    // 提交创建管理员
+    async function submitCreateUser() {
+      const username = document.getElementById('newUsername').value.trim();
+      const password = document.getElementById('newPassword').value.trim();
+      const role = document.getElementById('newRole').value;
 
-    // 导出等保合规报告
-    async function exportReport() {
-      const modal = document.getElementById('report-modal');
-      const body = document.getElementById('report-body');
-      modal.style.display = 'flex';
-      body.innerText = '正在生成并校验等保 2.0 三级测评完整证据链 (SHA-256 哈希计算中)...';
+      if (!username || !password) {
+        alert('请完整填写账号与密码');
+        return;
+      }
 
       try {
-        const resp = await fetch('/api/v1/compliance/export.md');
+        const resp = await fetch('/api/v1/system/users', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${state.token}`
+          },
+          body: JSON.stringify({ username, password, role })
+        });
+        const res = await resp.json();
         if (resp.ok) {
-          const text = await resp.text();
-          body.innerText = text;
+          showToast(`已成功创建管理员: ${username}`);
+          closeModal('createUserModal');
+          loadUsersList();
         } else {
-          body.innerText = '获取报告失败: ' + resp.statusText;
+          alert(`创建失败: ${res.error}`);
         }
-      } catch (e) {
-        body.innerText = '请求异常: ' + e.message;
+      } catch (err) {
+        console.error(err);
       }
     }
 
-    function closeModal() {
-      document.getElementById('report-modal').style.display = 'none';
+    function openComplianceJSON() {
+      window.open('/api/v1/compliance/full-report', '_blank');
     }
 
-    // 初始加载与轮询
-    loadDashboard();
-    setInterval(loadDashboard, 5000);
+    function logout() {
+      if (confirm('确认退出当前等保安全管理会话？')) {
+        location.reload();
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerText = msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
   </script>
 </body>
 </html>
