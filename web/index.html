@@ -477,6 +477,10 @@
         <div><span class="nav-icon">💻</span>4A 运维特权审计</div>
         <span class="nav-tag badge-info">会话链存证</span>
       </div>
+      <div class="nav-item" onclick="navigate('backup')" id="nav-backup">
+        <div><span class="nav-icon">💾</span>容灾备份与密评</div>
+        <span class="nav-tag badge-warning">国密 SM2/3/4</span>
+      </div>
       <div class="nav-item" onclick="navigate('compliance')" id="nav-compliance">
         <div><span class="nav-icon">🎖️</span>等保三级测评</div>
         <span class="nav-tag badge-success">99.6 优</span>
@@ -923,6 +927,75 @@
         </div>
       </section>
 
+      <!-- 视图 9: 容灾备份与国密密评 (等保 8.1.4.5 & GM/T 0054-2018) -->
+      <section id="view-backup" style="display:none;">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">💾 重要数据容灾备份与国密密评体系</h2>
+            <p class="page-subtitle">遵循 GB/T 22239-2019 8.1.4.5 数据备份恢复要求及 GM/T 0054-2018 商用密码应用安全性评估三级标准</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn btn-warning" onclick="triggerCreateBackup('OFFSITE_DISASTER_RECOVERY')">☁️ 立即创建异地灾备快照</button>
+            <button class="btn btn-primary" onclick="triggerCreateBackup('LOCAL_VAULT')">🏢 立即创建本地保险库快照</button>
+          </div>
+        </div>
+
+        <!-- 国密 GM/T 0054-2018 密评四合一指标卡 -->
+        <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom:20px;">
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-cyan);">
+            <div class="stat-label">国密算法 - SM2 (256-bit)</div>
+            <div class="stat-value" style="font-size: 1.25rem; color: var(--accent-cyan);">椭圆曲线公钥密码</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">管理指令数字签名、根凭据验签与防伪</div>
+          </div>
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-emerald);">
+            <div class="stat-label">国密算法 - SM3 (256-bit)</div>
+            <div class="stat-value" style="font-size: 1.25rem; color: var(--accent-emerald);">密码杂凑与防篡改</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">区块链审计链、180天日志防篡改指纹</div>
+          </div>
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-purple);">
+            <div class="stat-label">国密算法 - SM4 (128-bit)</div>
+            <div class="stat-value" style="font-size: 1.25rem; color: var(--accent-purple);">分组对称加密 (CBC)</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">灾备数据机密性、数据库密码保护</div>
+          </div>
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-amber);">
+            <div class="stat-label">密评总体合规评定</div>
+            <div class="stat-value" style="font-size: 1.25rem; color: var(--accent-amber);">100% 达标 (优)</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">GM/T 0054-2018 三级要求全部满足</div>
+          </div>
+        </div>
+
+        <!-- 灾备快照列表与恢复演练 -->
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-weight:700;">📦 等保三级容灾数据快照与国密数字印章存证库</div>
+            <div style="font-size:0.85rem; color:var(--text-secondary);">包含三权账号、防御策略、区块链审计链与 180 天留存存证</div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>快照编号</th>
+                <th>生成时间</th>
+                <th>存储场所</th>
+                <th>存储机密性</th>
+                <th>SM3 完整性防伪摘要</th>
+                <th>SM2 电子印章验签</th>
+                <th>快照状态</th>
+                <th>容灾演练操作</th>
+              </tr>
+            </thead>
+            <tbody id="backupSnapshotTableBody">
+              <!-- 动态填充 -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 容灾演练恢复结果展示栏 (点击恢复后展示) -->
+        <div id="restoreResultBox" class="card" style="display:none; border:1px solid var(--accent-emerald); background:rgba(16, 185, 129, 0.05); margin-bottom:20px;">
+          <div style="font-weight:700; color:var(--accent-emerald); margin-bottom:8px;" id="restoreResultTitle">✅ 容灾恢复演练成功</div>
+          <div style="font-size:0.9rem; line-height:1.6;" id="restoreResultDetail"></div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -1100,7 +1173,7 @@
       if (activeNavEl) activeNavEl.classList.add('active');
 
       // 隐藏所有视图
-      const views = ['dashboard', 'agents', 'policies', 'threats', 'audit', 'bastion', 'compliance', 'users'];
+      const views = ['dashboard', 'agents', 'policies', 'threats', 'audit', 'bastion', 'backup', 'compliance', 'users'];
       views.forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.style.display = (v === viewName) ? 'block' : 'none';
@@ -1115,6 +1188,7 @@
       if (viewName === 'threats') loadSecurityEvents();
       if (viewName === 'audit' && state.currentRole === 'audit_admin') loadAuditLogs();
       if (viewName === 'bastion') loadBastionData();
+      if (viewName === 'backup') loadBackupData();
       if (viewName === 'compliance') loadComplianceReport();
       if (viewName === 'users' && state.currentRole === 'sys_admin') loadUsersList();
     }
@@ -1555,6 +1629,96 @@
 
     function openComplianceJSON() {
       window.open('/api/v1/compliance/full-report', '_blank');
+    }
+
+    // 容灾备份与国密密评数据加载
+    async function loadBackupData() {
+      try {
+        const resp = await fetch('/api/v1/backup/snapshots');
+        const data = await resp.json();
+        const snapshots = data.snapshots || [];
+
+        const tbody = document.getElementById('backupSnapshotTableBody');
+        tbody.innerHTML = '';
+        snapshots.forEach(s => {
+          const tr = document.createElement('tr');
+          const isOffsite = s.storage_location === 'OFFSITE_DISASTER_RECOVERY';
+          const locBadge = isOffsite ? '<span class="badge badge-warning">☁️ 异地灾备中心</span>' : '<span class="badge badge-info">🏢 本地加密保险库</span>';
+          const sm3Short = (s.sm3_checksum || '').substring(0, 16) + '...';
+          const sm2Short = (s.sm2_signature || '').substring(0, 16) + '...';
+          const timeStr = new Date(s.created_at * 1000).toLocaleString();
+
+          tr.innerHTML = `
+            <td style="font-family:monospace; font-weight:700;">${s.snapshot_id}</td>
+            <td style="font-size:12px; color:var(--text-muted);">${timeStr}</td>
+            <td>${locBadge}</td>
+            <td><span class="badge badge-purple">${s.encryption_algorithm || 'SM4-128-CBC'}</span></td>
+            <td style="font-family:monospace; font-size:11px; color:var(--accent-color);" title="${s.sm3_checksum}">${sm3Short}</td>
+            <td style="font-family:monospace; font-size:11px; color:var(--success-color);" title="${s.sm2_signature}">${sm2Short} (SM2)</td>
+            <td><span class="badge ${s.status === 'VERIFIED' ? 'badge-success' : 'badge-info'}">${s.status}</span></td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="triggerRestoreBackup('${s.snapshot_id}')">⚡ 演练恢复验证</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Failed to load backup data:', err);
+      }
+    }
+
+    // 创建快照
+    async function triggerCreateBackup(location) {
+      try {
+        const resp = await fetch('/api/v1/backup/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ location: location })
+        });
+        const snap = await resp.json();
+        showToast(`✅ 已成功创建国密加密快照: ${snap.snapshot_id}`);
+        loadBackupData();
+      } catch (err) {
+        alert('创建快照失败: ' + err.message);
+      }
+    }
+
+    // 容灾恢复演练
+    async function triggerRestoreBackup(snapshotID) {
+      try {
+        const resp = await fetch('/api/v1/backup/restore', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ snapshot_id: snapshotID })
+        });
+        const res = await resp.json();
+        
+        const box = document.getElementById('restoreResultBox');
+        const title = document.getElementById('restoreResultTitle');
+        const detail = document.getElementById('restoreResultDetail');
+        box.style.display = 'block';
+
+        if (res.compliance_status === 'PASS') {
+          title.innerHTML = `✅ [国密合规验收合格] 容灾演练恢复成功 (${snapshotID})`;
+          title.style.color = 'var(--accent-emerald)';
+          detail.innerHTML = `
+            <strong>合规依据:</strong> GB/T 22239-2019 8.1.4.5 & GM/T 0054-2018<br>
+            <strong>国密解密:</strong> SM4 CBC 对称解密还原成功<br>
+            <strong>完整性核验:</strong> SM3 256 位防篡改杂凑比对一致 (${res.sm3_verified ? 'PASS' : 'FAIL'})<br>
+            <strong>电子印章验签:</strong> SM2 根证书公钥电子印章防伪验签一致 (${res.sm2_sig_verified ? 'PASS' : 'FAIL'})<br>
+            <strong>恢复模块:</strong> ${res.restored_modules ? res.restored_modules.join(', ') : '全部核心模块'}<br>
+            <div style="margin-top:6px; color:var(--text-secondary); font-size:12px;">${res.details}</div>
+          `;
+          showToast(`⚡ 容灾演练验证 100% 通过！`);
+        } else {
+          title.innerHTML = `🛑 容灾恢复演练失败 (${snapshotID})`;
+          title.style.color = 'var(--accent-rose)';
+          detail.innerHTML = `<strong>原因:</strong> ${res.details}`;
+        }
+        loadBackupData();
+      } catch (err) {
+        alert('恢复演练失败: ' + err.message);
+      }
     }
 
     function logout() {

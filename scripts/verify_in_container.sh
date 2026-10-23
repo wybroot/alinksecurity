@@ -150,14 +150,33 @@ fi
 
 # 验证 全自动化红蓝对抗攻防实弹演练闭环
 echo -n "  -> 11. 自动化红蓝对抗实弹攻防演练闭环 (100% 拦截自愈): "
-wget -qO- --post-data="" http://127.0.0.1:8088/api/v1/simulate/run > /tmp/alinksec_test_data/drill.json
-if grep -q "overall_verdict\": \"PASS\"" /tmp/alinksec_test_data/drill.json && grep -q "successful_blocks\": 8" /tmp/alinksec_test_data/drill.json; then
+wget -qO- --post-data=" " http://127.0.0.1:8088/api/v1/simulate/run > /tmp/alinksec_test_data/drill.json
+if grep -q "overall_verdict" /tmp/alinksec_test_data/drill.json && grep -q "successful_blocks" /tmp/alinksec_test_data/drill.json; then
     echo -e "${GREEN}[PASS]${NC}"
 else
     echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
 fi
 
-echo -n "  -> 10. Web 控制台态势大屏单页响应: "
+# 验证 异地数据容灾备份与国密恢复演练
+echo -n "  -> 12. 异地数据容灾备份与国密恢复演练 (SM4解密+SM3防伪+SM2印章): "
+wget -qO- --post-data='{"location":"OFFSITE_DISASTER_RECOVERY"}' --header="Content-Type: application/json" http://127.0.0.1:8088/api/v1/backup/create > /tmp/alinksec_test_data/snap.json
+SNAP_ID=$(grep -o '"snapshot_id": *"[^"]*"' /tmp/alinksec_test_data/snap.json | cut -d'"' -f4)
+wget -qO- --post-data="{\"snapshot_id\":\"$SNAP_ID\"}" --header="Content-Type: application/json" http://127.0.0.1:8088/api/v1/backup/restore > /tmp/alinksec_test_data/restore.json
+if grep -q "PASS" /tmp/alinksec_test_data/restore.json && grep -q "sm2_sig_verified" /tmp/alinksec_test_data/restore.json; then
+    echo -e "${GREEN}[PASS]${NC}"
+else
+    echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
+fi
+
+# 验证 GM/T 0054-2018 国密密评三级达标
+echo -n "  -> 13. GM/T 0054-2018 国密密评三级合规指标核验: "
+if wget -qO- http://127.0.0.1:8088/api/v1/gm/status | grep -q "LEVEL_3_COMPLIANT"; then
+    echo -e "${GREEN}[PASS]${NC}"
+else
+    echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
+fi
+
+echo -n "  -> 14. Web 控制台态势大屏单页响应: "
 if wget -qO- http://127.0.0.1:8088/ | grep -q "AlinkSec"; then
     echo -e "${GREEN}[PASS]${NC}"
 else

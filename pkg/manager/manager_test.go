@@ -3,6 +3,7 @@ package manager
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -225,3 +226,59 @@ func TestBastionAndSimulationEndpoints(t *testing.T) {
 		t.Fatalf("expected 8 successful blocks, got %v", simReport["successful_blocks"])
 	}
 }
+
+func TestBackupAndGMEndpoints(t *testing.T) {
+	server := NewHTTPServer([]byte("secret-key-for-test-32bytes-1234"))
+	handler := server.Router()
+
+	// 1. 获取灾备快照列表
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/backup/snapshots", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("failed to list backup snapshots: %d", w.Code)
+	}
+
+	// 2. 创建异地备份快照
+	body := []byte(`{"location":"OFFSITE_DISASTER_RECOVERY"}`)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/backup/create", bytes.NewBuffer(body))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("failed to create backup snapshot: %d", w.Code)
+	}
+	var snapResp map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &snapResp)
+	snapID, ok := snapResp["snapshot_id"].(string)
+	if !ok || snapID == "" {
+		t.Fatalf("missing snapshot_id in response")
+	}
+
+	// 3. 容灾恢复演练
+	restoreBody := []byte(fmt.Sprintf(`{"snapshot_id":"%s"}`, snapID))
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/backup/restore", bytes.NewBuffer(restoreBody))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("failed to restore backup snapshot: %d", w.Code)
+	}
+	var restoreResp map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &restoreResp)
+	if restoreResp["compliance_status"] != "PASS" {
+		t.Fatalf("expected restore status PASS, got %v", restoreResp["compliance_status"])
+	}
+
+	// 4. 国密密评合规状态
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/gm/status", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("failed to get GM status: %d", w.Code)
+	}
+	var gmResp map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &gmResp)
+	if gmResp["compliance_level"] != "LEVEL_3_COMPLIANT" {
+		t.Fatalf("expected LEVEL_3_COMPLIANT, got %v", gmResp["compliance_level"])
+	}
+}
+
