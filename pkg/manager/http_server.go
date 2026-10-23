@@ -19,6 +19,7 @@ import (
 	"alinksec/pkg/dashboard"
 	"alinksec/pkg/logger"
 	"alinksec/pkg/simulator"
+	"alinksec/pkg/soar"
 	"os"
 )
 
@@ -37,6 +38,7 @@ type HTTPServer struct {
 	bastionSM      *bastion.SessionManager
 	simRunner      *simulator.Runner
 	backupEngine   *backup.BackupEngine
+	soarEngine     *soar.SOAREngine
 	jwtSecret      []byte
 	mux            *http.ServeMux
 }
@@ -61,6 +63,7 @@ func NewHTTPServer(jwtSecret []byte) *HTTPServer {
 		bastionSM:      bSM,
 		simRunner:      simulator.NewRunner(),
 		backupEngine:   bkEngine,
+		soarEngine:     soar.NewSOAREngine(),
 		jwtSecret:      jwtSecret,
 		mux:            http.NewServeMux(),
 	}
@@ -103,6 +106,14 @@ func (s *HTTPServer) registerRoutes() {
 	s.mux.HandleFunc("POST /api/v1/backup/create", s.handleCreateBackupSnapshot)
 	s.mux.HandleFunc("POST /api/v1/backup/restore", s.handleRestoreBackupSnapshot)
 	s.mux.HandleFunc("GET /api/v1/gm/status", s.handleGMStatus)
+
+	// 智能 SOAR 自动化编排、多维攻击链与联动封禁池接口
+	s.mux.HandleFunc("GET /api/v1/soar/incidents", s.handleListSOARIncidents)
+	s.mux.HandleFunc("GET /api/v1/soar/blocked-ips", s.handleListBlockedIPs)
+	s.mux.HandleFunc("POST /api/v1/soar/unblock", s.handleSOARUnblock)
+	s.mux.HandleFunc("GET /api/v1/soar/playbooks", s.handleListPlaybooks)
+	s.mux.HandleFunc("POST /api/v1/soar/playbooks/toggle", s.handleTogglePlaybook)
+	s.mux.HandleFunc("POST /api/v1/soar/trigger-drill", s.handleSOARTargetDrill)
 
 	// 等保 2.0 三级自检报告导出 (公开与受保护模式)
 	s.mux.HandleFunc("GET /api/v1/compliance/full-report", s.handleFullComplianceReport)
@@ -768,4 +779,106 @@ func (s *HTTPServer) handleGMStatus(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 	s.writeJSON(w, http.StatusOK, status)
+}
+
+// ==================== 智能 SOAR 联动编排接口 ====================
+
+func (s *HTTPServer) handleListSOARIncidents(w http.ResponseWriter, r *http.Request) {
+	incidents := s.soarEngine.GetIncidents()
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"total":     len(incidents),
+		"incidents": incidents,
+	})
+}
+
+func (s *HTTPServer) handleListBlockedIPs(w http.ResponseWriter, r *http.Request) {
+	blocked := s.soarEngine.GetBlockedIPs()
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"total":   len(blocked),
+		"entries": blocked,
+	})
+}
+
+func (s *HTTPServer) handleSOARUnblock(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		IP        string `json:"ip"`
+		AdminUser string `json:"admin_user"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json payload"})
+		return
+	}
+	if req.AdminUser == "" {
+		req.AdminUser = "sec_admin"
+	}
+	if err := s.soarEngine.UnblockIP(req.IP, req.AdminUser); err != nil {
+		s.writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+
+	s.auditTrail.Record(req.AdminUser, "sec_admin", r.RemoteAddr, "SOAR_IP_UNBLOCK", "/api/v1/soar/unblock", req.IP, http.StatusOK, "SUCCESS")
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"success": true,
+		"message": fmt.Sprintf("IP %s 已从全网联动封禁池中成功解除，防御规则已同步撤回", req.IP),
+	})
+}
+
+func (s *HTTPServer) handleListPlaybooks(w http.ResponseWriter, r *http.Request) {
+	playbooks := s.soarEngine.GetPlaybooks()
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"total":     len(playbooks),
+		"playbooks": playbooks,
+	})
+}
+
+func (s *HTTPServer) handleTogglePlaybook(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		PlaybookID string `json:"playbook_id"`
+		Enabled    bool   `json:"enabled"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json payload"})
+		return
+	}
+
+	if err := s.soarEngine.TogglePlaybook(req.PlaybookID, req.Enabled); err != nil {
+		s.writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"success":     true,
+		"playbook_id": req.PlaybookID,
+		"enabled":     req.Enabled,
+	})
+}
+
+func (s *HTTPServer) handleSOARTargetDrill(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		DrillIP string `json:"drill_ip"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&req)
+
+	inc := s.soarEngine.RunMultiStageDrill(req.DrillIP)
+
+	// 同时将演练事件推入实时态势大屏中
+	s.dashboardSvc.RecordEvent(dashboard.ThreatEventSummary{
+		EventID:    fmt.Sprintf("EVT-SOAR-%d", time.Now().Unix()%10000),
+		Timestamp:  time.Now(),
+		Component:  "SOAR",
+		ThreatType: "APT_KILL_CHAIN",
+		Severity:   "CRITICAL",
+		SourceIP:   inc.SourceIP,
+		TargetHost: "Internal-Cluster",
+		Summary:    fmt.Sprintf("SOAR 联动演练多阶段 APT 突破 [IP: %s, 威胁分: %d, 联动封禁]", inc.SourceIP, inc.ThreatScore),
+		Action:     "BLOCKED",
+	})
+
+	s.auditTrail.Record("sec_admin", "sec_admin", r.RemoteAddr, "SOAR_APT_DRILL", "/api/v1/soar/trigger-drill", inc.SourceIP, http.StatusOK, "SUCCESS")
+
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"success":  true,
+		"message":  "智能 SOAR 多阶段 APT 协同联动演练执行完成",
+		"incident": inc,
+	})
 }

@@ -176,7 +176,16 @@ else
     echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
 fi
 
-echo -n "  -> 14. Web 控制台态势大屏单页响应: "
+# 验证 智能 SOAR 联动编排与多阶段 APT 协同处置
+echo -n "  -> 14. 智能 SOAR 联动编排与多阶段 APT 攻击链协同阻断: "
+wget -qO- --post-data='{"drill_ip":"198.51.100.99"}' --header="Content-Type: application/json" http://127.0.0.1:8088/api/v1/soar/trigger-drill > /tmp/alinksec_test_data/soar_drill.json
+if grep -q "success" /tmp/alinksec_test_data/soar_drill.json && wget -qO- http://127.0.0.1:8088/api/v1/soar/blocked-ips | grep -q "198.51.100.99"; then
+    echo -e "${GREEN}[PASS]${NC}"
+else
+    echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
+fi
+
+echo -n "  -> 15. Web 控制台态势大屏单页响应: "
 if wget -qO- http://127.0.0.1:8088/ | grep -q "AlinkSec"; then
     echo -e "${GREEN}[PASS]${NC}"
 else

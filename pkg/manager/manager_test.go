@@ -282,3 +282,52 @@ func TestBackupAndGMEndpoints(t *testing.T) {
 	}
 }
 
+func TestSOAREndpoints(t *testing.T) {
+	jwtSecret := []byte("test-jwt-secret-key-32-bytes-long!")
+	server := NewHTTPServer(jwtSecret)
+	handler := server.Router()
+
+	// 1. 获取事件与攻击链
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/soar/incidents", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	// 2. 获取封禁池
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/soar/blocked-ips", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	// 3. 获取剧本
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/soar/playbooks", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	// 4. 触发演练
+	drillBody := []byte(`{"drill_ip":"198.51.100.99"}`)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/soar/trigger-drill", bytes.NewBuffer(drillBody))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	// 5. 解封
+	unblockBody := []byte(`{"ip":"198.51.100.99","admin_user":"sec_admin"}`)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/soar/unblock", bytes.NewBuffer(unblockBody))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+}
+
+
