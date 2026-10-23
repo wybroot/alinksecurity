@@ -17,6 +17,7 @@ import (
 func main() {
 	var (
 		port      = flag.Int("port", 8080, "Manager HTTP API port")
+		addrFlag  = flag.String("addr", "", "Manager HTTP listen address (e.g. :8080 or 127.0.0.1:8080)")
 		jwtSecret = flag.String("jwt-secret", "alinksec-production-secret-key-32b!", "JWT HMAC-SHA256 signing secret")
 	)
 	flag.Parse()
@@ -28,6 +29,9 @@ func main() {
 
 	server := manager.NewHTTPServer([]byte(*jwtSecret))
 	addr := fmt.Sprintf(":%d", *port)
+	if *addrFlag != "" {
+		addr = *addrFlag
+	}
 
 	httpServer := &http.Server{
 		Addr:         addr,

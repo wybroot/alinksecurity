@@ -1,0 +1,71 @@
+version: '3.8'
+
+# ==============================================================================
+# AlinkSec - 等保 2.0 (三级) 模块化安全矩阵与态势感知一键演示全栈环境
+# 零接触宿主机，全流程容器化隔离运行
+# 访问 Web 控制台态势大屏: http://localhost:8080/
+# ==============================================================================
+
+networks:
+  alinksec-net:
+    driver: bridge
+
+services:
+  # 1. 轻量高性能消息总线 NATS (启用 JetStream)
+  nats-server:
+    image: nats:2.10-alpine
+    container_name: alinksec-nats
+    command: ["-js", "-m", "8222"]
+    networks:
+      - alinksec-net
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    restart: unless-stopped
+
+  # 2. 等保 180 天合规列式存储 ClickHouse
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    container_name: alinksec-clickhouse
+    networks:
+      - alinksec-net
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    environment:
+      CLICKHOUSE_DB: alinksec
+      CLICKHOUSE_USER: alinksec
+      CLICKHOUSE_PASSWORD: AlinkSec2026ClickHousePass!
+    volumes:
+      - ../clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+
+  # 3. AlinkSec 南向控制中枢 (gRPC)
+  alinksec-hub:
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile.verify
+    container_name: alinksec-hub
+    command: ["/app/build_bin/alinksec-hub", "-addr", ":50051"]
+    networks:
+      - alinksec-net
+    ports:
+      - "50051:50051"
+    depends_on:
+      - nats-server
+    restart: unless-stopped
+
+  # 4. AlinkSec 北向管理中心 & 态势大屏 Web 控制台 (HTTP 8080)
+  alinksec-manager:
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile.verify
+    container_name: alinksec-manager
+    command: ["/app/build_bin/alinksec-manager", "-port", "8080"]
+    networks:
+      - alinksec-net
+    ports:
+      - "8080:8080"
+    depends_on:
+      - alinksec-hub
+    restart: unless-stopped

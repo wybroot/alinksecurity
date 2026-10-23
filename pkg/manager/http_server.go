@@ -10,8 +10,11 @@ import (
 	"time"
 
 	"alinksec/pkg/auth"
+	"alinksec/pkg/compliance"
 	"alinksec/pkg/crypto"
+	"alinksec/pkg/dashboard"
 	"alinksec/pkg/logger"
+	"os"
 )
 
 type contextKey string
@@ -20,11 +23,13 @@ const claimsContextKey = contextKey("admin_claims")
 
 // HTTPServer 安全管理中心 Web API 服务
 type HTTPServer struct {
-	userStore   *UserStore
-	policyStore *PolicyStore
-	auditTrail  *AuditTrail
-	jwtSecret   []byte
-	mux         *http.ServeMux
+	userStore      *UserStore
+	policyStore    *PolicyStore
+	auditTrail     *AuditTrail
+	dashboardSvc   *dashboard.Service
+	evaluator      *compliance.Evaluator
+	jwtSecret      []byte
+	mux            *http.ServeMux
 }
 
 // NewHTTPServer 初始化管理后台 HTTP 服务
@@ -34,11 +39,13 @@ func NewHTTPServer(jwtSecret []byte) *HTTPServer {
 	}
 
 	s := &HTTPServer{
-		userStore:   NewUserStore(),
-		policyStore: NewPolicyStore(),
-		auditTrail:  NewAuditTrail(),
-		jwtSecret:   jwtSecret,
-		mux:         http.NewServeMux(),
+		userStore:    NewUserStore(),
+		policyStore:  NewPolicyStore(),
+		auditTrail:   NewAuditTrail(),
+		dashboardSvc: dashboard.NewService(),
+		evaluator:    compliance.NewEvaluator(),
+		jwtSecret:    jwtSecret,
+		mux:          http.NewServeMux(),
 	}
 
 	s.registerRoutes()
@@ -51,8 +58,19 @@ func (s *HTTPServer) Router() http.Handler {
 }
 
 func (s *HTTPServer) registerRoutes() {
+	// 静态控制台与态势感知大屏
+	s.mux.HandleFunc("GET /", s.handleIndex)
+	s.mux.HandleFunc("GET /dashboard", s.handleIndex)
+
 	// 公开/登录鉴权接口
 	s.mux.HandleFunc("POST /api/v1/auth/login", s.handleLogin)
+
+	// 态势感知大屏数据接口
+	s.mux.HandleFunc("GET /api/v1/dashboard/overview", s.handleDashboardOverview)
+
+	// 等保 2.0 三级自检报告导出 (公开与受保护模式)
+	s.mux.HandleFunc("GET /api/v1/compliance/full-report", s.handleFullComplianceReport)
+	s.mux.HandleFunc("GET /api/v1/compliance/export.md", s.handleExportComplianceMarkdown)
 
 	// 需要鉴权的路由
 	s.mux.HandleFunc("POST /api/v1/auth/totp/setup", s.withAuth(s.handleTOTPSetup, ""))
@@ -353,6 +371,42 @@ func (s *HTTPServer) handleComplianceReport(w http.ResponseWriter, r *http.Reque
 		},
 	}
 	s.writeJSON(w, http.StatusOK, report)
+}
+
+// handleIndex 渲染态势大屏前端单页
+func (s *HTTPServer) handleIndex(w http.ResponseWriter, r *http.Request) {
+	content, err := os.ReadFile("web/index.html")
+	if err != nil {
+		// 备用嵌入式 HTML
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Write([]byte(`<!DOCTYPE html><html><head><title>AlinkSec</title></head><body style="background:#0b0f19;color:#fff;font-family:sans-serif;padding:40px;"><h1>AlinkSec MLPS3 Security Platform</h1><p>Web Dashboard loaded. Please place web/index.html.</p></body></html>`))
+		return
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write(content)
+}
+
+// handleDashboardOverview 返回态势大屏实时指标
+func (s *HTTPServer) handleDashboardOverview(w http.ResponseWriter, r *http.Request) {
+	overview := s.dashboardSvc.GetOverview()
+	s.writeJSON(w, http.StatusOK, overview)
+}
+
+// handleFullComplianceReport 返回等保 2.0 三级全项合规自检报告 JSON
+func (s *HTTPServer) handleFullComplianceReport(w http.ResponseWriter, r *http.Request) {
+	report := s.evaluator.GenerateFullReport()
+	s.writeJSON(w, http.StatusOK, report)
+}
+
+// handleExportComplianceMarkdown 导出 Markdown 格式测评证据报告
+func (s *HTTPServer) handleExportComplianceMarkdown(w http.ResponseWriter, r *http.Request) {
+	report := s.evaluator.GenerateFullReport()
+	md := s.evaluator.GenerateMarkdownReport(report)
+
+	w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+	w.Header().Set("Content-Disposition", "attachment; filename=MLPS3_Compliance_Audit_Report.md")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(md))
 }
 
 func (s *HTTPServer) writeJSON(w http.ResponseWriter, code int, data any) {

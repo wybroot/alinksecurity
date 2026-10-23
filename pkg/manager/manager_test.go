@@ -159,4 +159,26 @@ func TestThreeRoleSeparationAndAudit(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("compliance report failed: %d, %s", w.Code, w.Body.String())
 	}
+
+	// 场景 H: 态势感知大屏与报告导出验证
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/dashboard/overview", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("dashboard overview failed: %d, %s", w.Code, w.Body.String())
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/compliance/export.md", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK || !bytes.Contains(w.Body.Bytes(), []byte("GB/T 22239-2019")) {
+		t.Fatalf("export markdown failed: %d, %s", w.Code, w.Body.String())
+	}
+
+	req = httptest.NewRequest(http.MethodGet, "/dashboard", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("dashboard html failed: %d", w.Code)
+	}
 }

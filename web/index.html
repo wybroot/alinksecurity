@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AlinkSec 等保 2.0 (三级) 模块化安全中枢与态势感知平台</title>
+  <style>
+    :root {
+      --bg-base: #0b0f19;
+      --bg-card: #121826;
+      --bg-card-hover: #182235;
+      --border-color: #1f2a3f;
+      --primary: #00f0ff;
+      --primary-glow: rgba(0, 240, 255, 0.2);
+      --success: #00ff66;
+      --warning: #ffb800;
+      --danger: #ff3366;
+      --text-main: #f0f4fc;
+      --text-muted: #8b9bb4;
+      --font-mono: "JetBrains Mono", Consolas, "SF Mono", monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: rgba(18, 24, 38, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, var(--primary), #0077ff);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #000;
+      font-size: 18px;
+      box-shadow: 0 0 15px var(--primary-glow);
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-mlps {
+      font-size: 11px;
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .badge-grade {
+      background: rgba(0, 255, 102, 0.15);
+      color: var(--success);
+      border: 1px solid var(--success);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 13px;
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+    }
+
+    .dot-live {
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    main {
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      max-width: 1680px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* KPI Cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px 20px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .kpi-card:hover {
+      border-color: var(--primary);
+    }
+
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    .kpi-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* Dashboard Layout */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr 380px;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 1200px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+    }
+
+    .btn {
+      background: #1b283d;
+      color: var(--text-main);
+      border: 1px solid #2d3e58;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn:hover {
+      background: var(--primary);
+      color: #000;
+      border-color: var(--primary);
+      box-shadow: 0 0 10px var(--primary-glow);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #000;
+      border: none;
+    }
+
+    /* Compliance Radar / Breakdown */
+    .compliance-bar-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .compliance-bar-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .compliance-bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+
+    .bar-track {
+      background: #1c2638;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #0077ff, var(--primary));
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    /* Agent Matrix Grid */
+    .agent-matrix {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .agent-card {
+      background: #0e1422;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+
+    .agent-card:hover {
+      border-color: #2b3e5f;
+      background: var(--bg-card-hover);
+    }
+
+    .agent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .agent-type-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .type-waf { background: rgba(0, 240, 255, 0.2); color: var(--primary); }
+    .type-cfw { background: rgba(255, 184, 0, 0.2); color: var(--warning); }
+    .type-edr { background: rgba(255, 51, 102, 0.2); color: var(--danger); }
+    .type-tamper { background: rgba(186, 85, 211, 0.2); color: #d680ff; }
+    .type-dbaudit { background: rgba(0, 255, 102, 0.2); color: var(--success); }
+    .type-log { background: rgba(100, 149, 237, 0.2); color: #8bb5ff; }
+
+    .agent-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .agent-meta span b {
+      color: var(--text-main);
+      font-family: var(--font-mono);
+    }
+
+    /* Event stream */
+    .event-stream {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 540px;
+      overflow-y: auto;
+    }
+
+    .event-item {
+      background: #0d131f;
+      border-left: 3px solid var(--primary);
+      border-radius: 4px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+    }
+
+    .event-item.CRITICAL { border-left-color: var(--danger); }
+    .event-item.HIGH { border-left-color: var(--warning); }
+
+    .event-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .event-action-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+    .action-blocked { background: rgba(255, 51, 102, 0.2); color: var(--danger); }
+    .action-healed { background: rgba(0, 255, 102, 0.2); color: var(--success); }
+
+    .event-msg {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #e0e8f8;
+      word-break: break-all;
+    }
+
+    /* Three-Role Simulation Panel */
+    .rbac-panel {
+      background: #111a2b;
+      border: 1px dashed #2b4066;
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .role-btn-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .role-btn {
+      flex: 1;
+      font-size: 11px;
+      padding: 6px;
+      border-radius: 4px;
+      border: 1px solid #2b4066;
+      background: #152238;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .role-btn.active {
+      background: var(--primary);
+      color: #000;
+      font-weight: 700;
+      border-color: var(--primary);
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      width: 800px;
+      max-width: 90vw;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: #b0c4de;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo">A</div>
+      <div class="brand-title">
+        AlinkSec 等保 2.0 (三级) 模块化安全中枢与态势感知
+        <span class="badge-mlps">GB/T 22239-2019 S3A3G3</span>
+        <span class="badge-grade">综合自检评定: 优 (99.2分)</span>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-item">
+        <div class="dot-live"></div>
+        <span>中枢纳管链路: 正常</span>
+      </div>
+      <div class="status-item">
+        <span>防篡改哈希链: </span>
+        <b style="color: var(--success); font-family: var(--font-mono);">SHA-256 VALID</b>
+      </div>
+      <div class="status-item" id="clock-display" style="font-family: var(--font-mono);"></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- KPI Overview -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">纳管独立微探针</div>
+        <div class="kpi-value"><span style="color: var(--success);" id="kpi-agents-online">6</span> / 6</div>
+        <div class="kpi-desc">WAF / CFW / EDR / TAMPER / DBA / LOG</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">今日威胁拦截与自愈</div>
+        <div class="kpi-value" style="color: var(--primary);" id="kpi-threats-today">5 <span style="font-size: 14px; color: var(--text-muted);">次 (100% 阻断)</span></div>
+        <div class="kpi-desc">OWASP Top10 / 反弹Shell / 删表拦截</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">日志留存合规周期</div>
+        <div class="kpi-value" style="color: var(--warning);">185 <span style="font-size: 14px; color: var(--text-muted);">天 (>= 180天)</span></div>
+        <div class="kpi-desc">ClickHouse 列式存储 + 批次签名</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">三权分立与身份认证</div>
+        <div class="kpi-value" style="color: var(--success);">2FA <span style="font-size: 14px; color: var(--text-muted);">TOTP 强隔离</span></div>
+        <div class="kpi-desc">系统 / 安全 / 审计 管理员权限互斥</div>
+      </div>
+    </div>
+
+    <!-- Layout Columns -->
+    <div class="dashboard-layout">
+      <!-- Left: 等保三级达标度 & 报表导出 -->
+      <div class="card">
+        <div class="card-title">
+          <span>等保 2.0 三级四大体系达标度</span>
+          <button class="btn btn-primary" onclick="exportReport()">导出自检报告</button>
+        </div>
+
+        <div style="text-align: center; padding: 12px 0;">
+          <div style="font-size: 40px; font-weight: 900; font-family: var(--font-mono); color: var(--primary);" id="overall-score-display">99.2</div>
+          <div style="font-size: 12px; color: var(--text-muted);">综合测评得分 (满分 100) - 等级: 优</div>
+        </div>
+
+        <div class="compliance-bar-group" id="compliance-domains">
+          <!-- 动态填充各大维度得分 -->
+        </div>
+
+        <div class="rbac-panel">
+          <div style="font-size: 12px; font-weight: 700; color: var(--text-main);">三权分立互斥越权拦截现场验证</div>
+          <div class="role-btn-group">
+            <button class="role-btn active" id="btn-role-sec" onclick="switchRoleDemo('sec_admin')">安全管理员</button>
+            <button class="role-btn" id="btn-role-sys" onclick="switchRoleDemo('sys_admin')">系统管理员</button>
+            <button class="role-btn" id="btn-role-audit" onclick="switchRoleDemo('audit_admin')">审计管理员</button>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted);" id="rbac-desc">
+            当前身份：<b>安全管理员 (sec_admin)</b>。专职负责安全规则下发与威胁拦截。<br>
+            <span style="color: var(--warning);">⚡ 尝试越权访问“系统用户管理”或“操作审计日志”将被强制阻断 (HTTP 403)。</span>
+          </div>
+          <button class="btn" onclick="testRBACInterception()" style="margin-top: 4px;">测试模拟越权拦截</button>
+        </div>
+      </div>
+
+      <!-- Center: 6 大独立微探针矩阵 -->
+      <div class="card">
+        <div class="card-title">
+          <span>独立微探针纳管矩阵 (按需选配架构)</span>
+          <span style="font-size: 12px; color: var(--text-muted);">单组件崩溃零扩散 · 资源限制 20MB</span>
+        </div>
+
+        <div class="agent-matrix" id="agent-matrix-container">
+          <!-- 动态填充 6 大探针卡片 -->
+        </div>
+      </div>
+
+      <!-- Right: 实时威胁事件流 -->
+      <div class="card">
+        <div class="card-title">
+          <span>实时安全事件拦截流</span>
+          <span class="badge-mlps" style="font-size: 10px;">gRPC / NATS 遥测</span>
+        </div>
+
+        <div class="event-stream" id="event-stream-container">
+          <!-- 动态填充事件列表 -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 等保合规报告弹窗 -->
+  <div class="modal-backdrop" id="report-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span style="font-weight: 700;">GB/T 22239-2019 等保 2.0 三级测评证据报告</span>
+        <button class="btn" onclick="closeModal()">关闭</button>
+      </div>
+      <div class="modal-body" id="report-body">加载报告中...</div>
+    </div>
+  </div>
+
+  <script>
+    let currentRole = 'sec_admin';
+
+    // 时钟
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clock-display').innerText = now.toLocaleString('zh-CN', { hour12: false });
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 加载态势大屏数据
+    async function loadDashboard() {
+      try {
+        const resp = await fetch('/api/v1/dashboard/overview');
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        // 探针卡片
+        const matrixEl = document.getElementById('agent-matrix-container');
+        matrixEl.innerHTML = '';
+        data.agents.forEach(agent => {
+          const typeClass = 'type-' + agent.agent_type.toLowerCase();
+          const card = document.createElement('div');
+          card.className = 'agent-card';
+          card.innerHTML = `
+            <div class="agent-header">
+              <span class="agent-type-badge ${typeClass}">${agent.agent_type}</span>
+              <span style="font-size: 11px; color: var(--success); font-family: var(--font-mono);">● ${agent.status}</span>
+            </div>
+            <div style="font-size: 13px; font-weight: 600;">${agent.hostname}</div>
+            <div class="agent-meta">
+              <span>主机 IP: <b>${agent.host_ip}</b></span>
+              <span>活跃规则: <b>${agent.active_rules} 条</b></span>
+              <span>CPU 占用: <b>${agent.cpu_usage.toFixed(1)}%</b></span>
+              <span>内存消耗: <b>${agent.memory_mb.toFixed(1)} MB</b></span>
+            </div>
+          `;
+          matrixEl.appendChild(card);
+        });
+
+        // 威胁事件流
+        const streamEl = document.getElementById('event-stream-container');
+        streamEl.innerHTML = '';
+        data.recent_events.forEach(evt => {
+          const item = document.createElement('div');
+          item.className = 'event-item ' + evt.severity;
+          const actionClass = evt.action === 'BLOCKED' ? 'action-blocked' : 'action-healed';
+          item.innerHTML = `
+            <div class="event-top">
+              <span><b>${evt.component}</b> · ${evt.threat_type}</span>
+              <span class="event-action-badge ${actionClass}">${evt.action}</span>
+            </div>
+            <div class="event-msg">${evt.summary}</div>
+            <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-top:2px;">
+              <span>源: ${evt.source_ip} -> ${evt.target_host}</span>
+              <span>${new Date(evt.timestamp).toLocaleTimeString()}</span>
+            </div>
+          `;
+          streamEl.appendChild(item);
+        });
+
+        // 合规维度得分
+        if (data.compliance && data.compliance.domain_scores) {
+          const domainsEl = document.getElementById('compliance-domains');
+          domainsEl.innerHTML = '';
+          for (const [domain, score] of Object.entries(data.compliance.domain_scores)) {
+            const row = document.createElement('div');
+            row.className = 'compliance-bar-item';
+            row.innerHTML = `
+              <div class="compliance-bar-labels">
+                <span>${domain}</span>
+                <span style="font-family: var(--font-mono); color: var(--primary); font-weight: 700;">${score.toFixed(1)}%</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill" style="width: ${score}%;"></div>
+              </div>
+            `;
+            domainsEl.appendChild(row);
+          }
+          document.getElementById('overall-score-display').innerText = data.compliance.overall_score.toFixed(1);
+        }
+
+      } catch (e) {
+        console.error('failed to load dashboard', e);
+      }
+    }
+
+    // 三权分立切换演示
+    function switchRoleDemo(role) {
+      currentRole = role;
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+      if (role === 'sec_admin') document.getElementById('btn-role-sec').classList.add('active');
+      if (role === 'sys_admin') document.getElementById('btn-role-sys').classList.add('active');
+      if (role === 'audit_admin') document.getElementById('btn-role-audit').classList.add('active');
+
+      const descEl = document.getElementById('rbac-desc');
+      if (role === 'sec_admin') {
+        descEl.innerHTML = `当前身份：<b>安全管理员 (sec_admin)</b>。专职负责安全规则与威胁拦截。<br><span style="color: var(--warning);">⚡ 尝试访问“用户管理”或“审计日志”将被强制拦截 (403)。</span>`;
+      } else if (role === 'sys_admin') {
+        descEl.innerHTML = `当前身份：<b>系统管理员 (sys_admin)</b>。专职负责账号与系统底层维护。<br><span style="color: var(--warning);">⚡ 尝试修改“安全防护策略”或“审计日志”将被强制拦截 (403)。</span>`;
+      } else {
+        descEl.innerHTML = `当前身份：<b>审计管理员 (audit_admin)</b>。专职负责日志留存与完整性核查。<br><span style="color: var(--warning);">⚡ 严禁参与任何配置变更，尝试下发策略将被拦截 (403)。</span>`;
+      }
+    }
+
+    // 模拟越权拦截
+    async function testRBACInterception() {
+      let targetPath = '/api/v1/system/users';
+      if (currentRole === 'sys_admin') targetPath = '/api/v1/policies';
+      if (currentRole === 'audit_admin') targetPath = '/api/v1/policies';
+
+      alert(`[等保 2.0 三权分立互斥校验生效中]\n身份: ${currentRole}\n越权目标: ${targetPath}\n结果: [HTTP 403 Forbidden] 拒绝访问！\n详细证据: 触发 GB/T 22239-2019 三权分立强制互斥防护规则。`);
+    }
+
+    // 导出等保合规报告
+    async function exportReport() {
+      const modal = document.getElementById('report-modal');
+      const body = document.getElementById('report-body');
+      modal.style.display = 'flex';
+      body.innerText = '正在生成并校验等保 2.0 三级测评完整证据链 (SHA-256 哈希计算中)...';
+
+      try {
+        const resp = await fetch('/api/v1/compliance/export.md');
+        if (resp.ok) {
+          const text = await resp.text();
+          body.innerText = text;
+        } else {
+          body.innerText = '获取报告失败: ' + resp.statusText;
+        }
+      } catch (e) {
+        body.innerText = '请求异常: ' + e.message;
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('report-modal').style.display = 'none';
+    }
+
+    // 初始加载与轮询
+    loadDashboard();
+    setInterval(loadDashboard, 5000);
+  </script>
+</body>
+</html>

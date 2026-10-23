@@ -130,6 +130,21 @@ sleep 2
 kill -9 $AGENT_PID 2>/dev/null || true
 echo -e "${GREEN}[PASS]${NC}"
 
+# 验证 态势感知大屏 API 与等保三级合规报表一键导出
+echo -n "  -> 9. 态势感知大屏 API 与等保合规报表导出: "
+if wget -qO- http://127.0.0.1:8088/api/v1/dashboard/overview | grep -q "GB/T 22239-2019"; then
+    echo -e "${GREEN}[PASS]${NC}"
+else
+    echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
+fi
+
+echo -n "  -> 10. Web 控制台态势大屏单页响应: "
+if wget -qO- http://127.0.0.1:8088/ | grep -q "AlinkSec"; then
+    echo -e "${GREEN}[PASS]${NC}"
+else
+    echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
+fi
+
 # 清理后台服务
 kill -9 $MGR_PID 2>/dev/null || true
 kill -9 $HUB_PID 2>/dev/null || true
