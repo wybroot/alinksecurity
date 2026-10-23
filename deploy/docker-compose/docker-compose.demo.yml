@@ -66,6 +66,8 @@ services:
       - alinksec-net
     ports:
       - "${ALINKSEC_PORT:-18080}:8080"
+    volumes:
+      - ../../web:/app/web:ro
     depends_on:
       - alinksec-hub
     restart: unless-stopped

