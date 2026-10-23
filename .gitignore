@@ -1,0 +1,40 @@
+# Binaries & Build Artifacts
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+dist/
+
+# Dependencies
+vendor/
+node_modules/
+
+# Logs & Runtime Data
+*.log
+data/
+storage/
+temp/
+tmp/
+
+# Secrets & Private Keys (Strict for MLPS3 Compliance)
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+.env
+.env.*
+!.env.example
+
+# IDE & Editor Configs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

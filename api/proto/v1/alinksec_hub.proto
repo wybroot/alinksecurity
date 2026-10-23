@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package alinksec.hub.v1;
+
+option go_package = "alinksec/api/proto/v1;v1";
+
+// Agent 类型枚举
+enum AgentType {
+  AGENT_UNKNOWN = 0;
+  AGENT_EDR = 1;         // 主机安全/端点检测与响应
+  AGENT_WAF = 2;         // 云 WAF 探针
+  AGENT_FIREWALL = 3;    // 云防火墙/微隔离
+  AGENT_AUDIT = 4;       // 日志与数据库审计探针
+  AGENT_TAMPER = 5;      // 网页防篡改探针
+}
+
+// 事件威胁等级
+enum EventLevel {
+  LEVEL_DEBUG = 0;
+  LEVEL_INFO = 1;
+  LEVEL_WARN = 2;
+  LEVEL_HIGH = 3;
+  LEVEL_CRITICAL = 4;
+}
+
+// 统一探针注册请求
+message RegisterRequest {
+  string agent_id = 1;
+  AgentType agent_type = 2;
+  string version = 3;
+  string hostname = 4;
+  string ip = 5;
+  string mac = 6;
+  string os = 7;
+  string arch = 8;
+  int64 timestamp = 9;
+}
+
+// 注册响应
+message RegisterResponse {
+  bool success = 1;
+  string message = 2;
+  string session_token = 3;
+  int32 heartbeat_interval_sec = 4;
+  int64 server_time = 5;
+}
+
+// 探针心跳请求
+message HeartbeatRequest {
+  string agent_id = 1;
+  string session_token = 2;
+  int64 timestamp = 3;
+  float cpu_usage = 4;
+  int64 memory_used_bytes = 5;
+  int64 disk_used_bytes = 6;
+  int32 active_rules_count = 7;
+}
+
+// 心跳响应
+message HeartbeatResponse {
+  bool acknowledged = 1;
+  bool need_policy_sync = 2;
+  string latest_policy_version = 3;
+  int64 server_time = 4;
+}
+
+// 统一安全事件定义
+message RawSecurityEvent {
+  string event_id = 1;
+  AgentType source_agent_type = 2;
+  string agent_id = 3;
+  string host_ip = 4;
+  string hostname = 5;
+  int64 event_time = 6;
+  EventLevel level = 7;
+  string category = 8;
+  string rule_id = 9;
+  string message = 10;
+  bytes raw_payload = 11;
+  string signature = 12;
+}
+
+// 事件上报确认
+message ReportAck {
+  int64 accepted_count = 1;
+  int64 server_time = 2;
+}
+
+// 策略拉取请求
+message PolicySyncRequest {
+  string agent_id = 1;
+  string session_token = 2;
+  string current_policy_version = 3;
+}
+
+// 策略下发载荷
+message PolicyPackage {
+  string policy_version = 1;
+  int64 created_at = 2;
+  bytes signature = 3;
+  repeated FileRule file_rules = 4;
+  repeated ProcessRule process_rules = 5;
+  repeated NetworkRule network_rules = 6;
+}
+
+message FileRule {
+  string rule_id = 1;
+  string path_pattern = 2;
+  bool is_protected = 3;
+  bool backup_on_modify = 4;
+}
+
+message ProcessRule {
+  string rule_id = 1;
+  string process_name = 2;
+  string allowed_hash = 3;
+  bool block_if_mismatch = 4;
+}
+
+message NetworkRule {
+  string rule_id = 1;
+  string direction = 2; // "IN" or "OUT"
+  string protocol = 3;  // "TCP", "UDP", "ICMP"
+  string src_cidr = 4;
+  string dst_cidr = 5;
+  string dst_port = 6;
+  string action = 7;    // "ALLOW", "DROP", "LOG"
+}
+
+// 南向核心 gRPC 服务契约
+service AlinkSecHubService {
+  rpc RegisterAgent(RegisterRequest) returns (RegisterResponse);
+  rpc SendHeartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc ReportEvents(stream RawSecurityEvent) returns (ReportAck);
+  rpc SyncPolicy(PolicySyncRequest) returns (PolicyPackage);
+}
