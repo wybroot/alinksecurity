@@ -37,11 +37,11 @@ type TamperEvent struct {
 
 // Config 防篡改配置
 type Config struct {
-	AgentID          string   `json:"agent_id"`
-	WatchDir         string   `json:"watch_dir"`          // 监控的 Web 发布根目录
-	BackupDir        string   `json:"backup_dir"`         // 本地隔离可信备份目录
-	HubAddr          string   `json:"hub_addr"`           // 安全管理中心 gRPC 地址 (可选)
-	ProtectedExts    []string `json:"protected_exts"`     // 重点受保护扩展名 (如 .html, .jsp, .php, .js, .css)
-	AutoRevert       bool     `json:"auto_revert"`        // 是否开启毫秒级自愈恢复 (默认 true)
-	MaintenanceMode  bool     `json:"maintenance_mode"`   // 是否处于白名单维护发布模式
+	AgentID         string   `json:"agent_id"`
+	WatchDir        string   `json:"watch_dir"`        // 监控的 Web 发布根目录
+	BackupDir       string   `json:"backup_dir"`       // 本地隔离可信备份目录
+	HubAddr         string   `json:"hub_addr"`         // 安全管理中心 gRPC 地址 (可选)
+	ProtectedExts   []string `json:"protected_exts"`   // 重点受保护扩展名 (如 .html, .jsp, .php, .js, .css)
+	AutoRevert      bool     `json:"auto_revert"`      // 是否开启毫秒级自愈恢复 (默认 true)
+	MaintenanceMode bool     `json:"maintenance_mode"` // 是否处于白名单维护发布模式
 }

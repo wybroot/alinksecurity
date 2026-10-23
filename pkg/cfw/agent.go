@@ -27,13 +27,13 @@ type AgentConfig struct {
 
 // CFWAgent 微隔离与云防火墙探针
 type CFWAgent struct {
-	cfg          *AgentConfig
-	engine       *Engine
-	ctx          context.Context
-	cancel       context.CancelFunc
-	token        string
-	policyVer    string
-	wg           sync.WaitGroup
+	cfg       *AgentConfig
+	engine    *Engine
+	ctx       context.Context
+	cancel    context.CancelFunc
+	token     string
+	policyVer string
+	wg        sync.WaitGroup
 
 	// 指标
 	evaluatedPackets uint64
@@ -229,7 +229,7 @@ func (a *CFWAgent) reportFirewallEvent(evt *FirewallEvent) {
 		RuleId:          evt.MatchedRuleID,
 		Message:         fmt.Sprintf("Microsegmentation Drop: %s", evt.Reason),
 		RawPayload:      payloadJSON,
-		Signature:        hex.EncodeToString(hash[:]),
+		Signature:       hex.EncodeToString(hash[:]),
 	}
 
 	a.eventStreamMu.Lock()

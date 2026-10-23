@@ -15,10 +15,10 @@ import (
 )
 
 var (
-	ErrTokenExpired       = errors.New("token has expired")
-	ErrTokenMalformed     = errors.New("malformed token")
-	ErrSignatureInvalid   = errors.New("invalid token signature")
-	ErrTwoFactorRequired  = errors.New("two-factor authentication required")
+	ErrTokenExpired      = errors.New("token has expired")
+	ErrTokenMalformed    = errors.New("malformed token")
+	ErrSignatureInvalid  = errors.New("invalid token signature")
+	ErrTwoFactorRequired = errors.New("two-factor authentication required")
 )
 
 // Header JWT 头部

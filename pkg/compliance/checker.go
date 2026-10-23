@@ -10,30 +10,30 @@ import (
 
 // CheckItem 单项等保核查指标项
 type CheckItem struct {
-	ID          string   `json:"id"`           // 标准条款编号，如 "8.1.4.1"
-	Standard    string   `json:"standard"`     // GB/T 22239-2019
-	Domain      string   `json:"domain"`       // 安全计算环境 / 安全区域边界 / 安全管理中心 / 安全通信网络
-	Category    string   `json:"category"`     // 控制点：如 身份鉴别、访问控制、安全审计、入侵防范
-	Requirement string   `json:"requirement"`  // 标准条款内容
-	Status      string   `json:"status"`       // COMPLIANT (合规) / NON_COMPLIANT (不合规)
-	Score       float64  `json:"score"`        // 单项得分 (0-100)
-	Weight      float64  `json:"weight"`       // 权重
-	Evidence    string   `json:"evidence"`     // 现场测评取证数据
-	Components  []string `json:"components"`   // 对应纳管组件 (WAF, EDR, CFW, DBAUDIT, LOG, MANAGER)
+	ID          string   `json:"id"`          // 标准条款编号，如 "8.1.4.1"
+	Standard    string   `json:"standard"`    // GB/T 22239-2019
+	Domain      string   `json:"domain"`      // 安全计算环境 / 安全区域边界 / 安全管理中心 / 安全通信网络
+	Category    string   `json:"category"`    // 控制点：如 身份鉴别、访问控制、安全审计、入侵防范
+	Requirement string   `json:"requirement"` // 标准条款内容
+	Status      string   `json:"status"`      // COMPLIANT (合规) / NON_COMPLIANT (不合规)
+	Score       float64  `json:"score"`       // 单项得分 (0-100)
+	Weight      float64  `json:"weight"`      // 权重
+	Evidence    string   `json:"evidence"`    // 现场测评取证数据
+	Components  []string `json:"components"`  // 对应纳管组件 (WAF, EDR, CFW, DBAUDIT, LOG, MANAGER)
 }
 
 // EvaluationResult 评估打分结果汇总
 type EvaluationResult struct {
-	SystemName       string               `json:"system_name"`
-	StandardLevel    string               `json:"standard_level"`    // 等保 2.0 三级 (S3A3G3)
-	EvaluationTime   string               `json:"evaluation_time"`
-	OverallScore     float64              `json:"overall_score"`     // 综合得分 (百分制)
-	ComplianceGrade  string               `json:"compliance_grade"`  // 优 / 良 / 中 / 差
-	DomainScores     map[string]float64   `json:"domain_scores"`     // 各大维度得分
-	TotalItems       int                  `json:"total_items"`
-	CompliantItems   int                  `json:"compliant_items"`
-	CheckItems       []CheckItem          `json:"check_items"`
-	EvidenceHash     string               `json:"evidence_hash"`     // 全报告 SHA-256 防篡改校验签名
+	SystemName      string             `json:"system_name"`
+	StandardLevel   string             `json:"standard_level"` // 等保 2.0 三级 (S3A3G3)
+	EvaluationTime  string             `json:"evaluation_time"`
+	OverallScore    float64            `json:"overall_score"`    // 综合得分 (百分制)
+	ComplianceGrade string             `json:"compliance_grade"` // 优 / 良 / 中 / 差
+	DomainScores    map[string]float64 `json:"domain_scores"`    // 各大维度得分
+	TotalItems      int                `json:"total_items"`
+	CompliantItems  int                `json:"compliant_items"`
+	CheckItems      []CheckItem        `json:"check_items"`
+	EvidenceHash    string             `json:"evidence_hash"` // 全报告 SHA-256 防篡改校验签名
 }
 
 // Evaluator 等保 2.0 三级合规评估器

@@ -17,14 +17,14 @@ const (
 
 // BaselineItem 基线检查项
 type BaselineItem struct {
-	ID          string         `json:"id"`
-	Name        string         `json:"name"`
-	Standard    string         `json:"standard"` // GB/T 22239-2019 等保条款
-	Description string         `json:"description"`
-	Passed      bool           `json:"passed"`
-	Level       pb.EventLevel  `json:"level"`
-	Detail      string         `json:"detail"`
-	Remediation string         `json:"remediation"`
+	ID          string        `json:"id"`
+	Name        string        `json:"name"`
+	Standard    string        `json:"standard"` // GB/T 22239-2019 等保条款
+	Description string        `json:"description"`
+	Passed      bool          `json:"passed"`
+	Level       pb.EventLevel `json:"level"`
+	Detail      string        `json:"detail"`
+	Remediation string        `json:"remediation"`
 }
 
 // ProcessInfo 进程行为快照

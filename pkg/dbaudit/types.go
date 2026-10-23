@@ -15,13 +15,13 @@ const (
 type SQLOperation string
 
 const (
-	OpSelect   SQLOperation = "SELECT"
-	OpInsert   SQLOperation = "INSERT"
-	OpUpdate   SQLOperation = "UPDATE"
-	OpDelete   SQLOperation = "DELETE"
-	OpDDL      SQLOperation = "DDL"      // CREATE, DROP, ALTER, TRUNCATE
-	OpAdmin    SQLOperation = "ADMIN"    // GRANT, REVOKE, SHOW, SET, KILL
-	OpUnknown  SQLOperation = "UNKNOWN"
+	OpSelect  SQLOperation = "SELECT"
+	OpInsert  SQLOperation = "INSERT"
+	OpUpdate  SQLOperation = "UPDATE"
+	OpDelete  SQLOperation = "DELETE"
+	OpDDL     SQLOperation = "DDL"   // CREATE, DROP, ALTER, TRUNCATE
+	OpAdmin   SQLOperation = "ADMIN" // GRANT, REVOKE, SHOW, SET, KILL
+	OpUnknown SQLOperation = "UNKNOWN"
 )
 
 // RiskLevel 风险等级 (等保三级划分)

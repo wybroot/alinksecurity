@@ -12,11 +12,11 @@ import (
 type KillChainStage string
 
 const (
-	StageRecon          KillChainStage = "RECONNAISSANCE"      // 侦察扫描阶段
-	StageExploit        KillChainStage = "EXPLOITATION"        // 漏洞利用与入侵突破
-	StagePrivEscalation KillChainStage = "PRIVILEGE_ESCALATE"  // 权限提升与持久化后门
-	StageLateralMove    KillChainStage = "LATERAL_MOVEMENT"    // 横向渗透与边界跨越
-	StageExfiltration   KillChainStage = "DATA_EXFILTRATION"   // 核心数据窃取与破坏
+	StageRecon          KillChainStage = "RECONNAISSANCE"     // 侦察扫描阶段
+	StageExploit        KillChainStage = "EXPLOITATION"       // 漏洞利用与入侵突破
+	StagePrivEscalation KillChainStage = "PRIVILEGE_ESCALATE" // 权限提升与持久化后门
+	StageLateralMove    KillChainStage = "LATERAL_MOVEMENT"   // 横向渗透与边界跨越
+	StageExfiltration   KillChainStage = "DATA_EXFILTRATION"  // 核心数据窃取与破坏
 )
 
 // SecurityIncident 智能告警聚合与攻击链关联事件
@@ -141,18 +141,18 @@ func (e *SOAREngine) initPresetData() {
 
 	// 预置演练事件 1: 多阶段 APT 攻击链已处置
 	inc1 := &SecurityIncident{
-		ID:             "INC-20261024-001",
-		SourceIP:       "198.51.100.88",
-		Target:         "DMZ-WebServer -> APP-OrderSvc",
-		Stages:         []KillChainStage{StageRecon, StageExploit, StageLateralMove},
-		EventCount:     5,
-		ComponentsSeen: []string{"WAF", "CFW", "EDR"},
-		ThreatScore:    92,
-		Status:         "CONTAINED",
+		ID:               "INC-20261024-001",
+		SourceIP:         "198.51.100.88",
+		Target:           "DMZ-WebServer -> APP-OrderSvc",
+		Stages:           []KillChainStage{StageRecon, StageExploit, StageLateralMove},
+		EventCount:       5,
+		ComponentsSeen:   []string{"WAF", "CFW", "EDR"},
+		ThreatScore:      92,
+		Status:           "CONTAINED",
 		MitigationAction: "PB-APT-01: CFW 联动下发全网阻断规则，拉黑 IP 24 小时",
-		TriggeredRule:  "CROSS_COMPONENT_CORRELATION",
-		FirstSeen:      now.Add(-45 * time.Minute),
-		LastSeen:       now.Add(-40 * time.Minute),
+		TriggeredRule:    "CROSS_COMPONENT_CORRELATION",
+		FirstSeen:        now.Add(-45 * time.Minute),
+		LastSeen:         now.Add(-40 * time.Minute),
 	}
 	inc1.DigitalSignature = e.computeIncidentSignature(inc1)
 	e.incidents[inc1.SourceIP] = inc1
@@ -164,24 +164,24 @@ func (e *SOAREngine) initPresetData() {
 		PlaybookID: "PB-APT-01",
 		IncidentID: "INC-20261024-001",
 		BlockedAt:  now.Add(-40 * time.Minute),
-		ExpiresAt:  now.Add(23 * time.Hour + 20 * time.Minute),
+		ExpiresAt:  now.Add(23*time.Hour + 20*time.Minute),
 		Active:     true,
 	}
 
 	// 预置演练事件 2: 数据库勒索删表阻断
 	inc2 := &SecurityIncident{
-		ID:             "INC-20261024-002",
-		SourceIP:       "172.18.0.45",
-		Target:         "DATA-MySQL-Master (users 表)",
-		Stages:         []KillChainStage{StageExfiltration},
-		EventCount:     2,
-		ComponentsSeen: []string{"DBAUDIT"},
-		ThreatScore:    96,
-		Status:         "CONTAINED",
+		ID:               "INC-20261024-002",
+		SourceIP:         "172.18.0.45",
+		Target:           "DATA-MySQL-Master (users 表)",
+		Stages:           []KillChainStage{StageExfiltration},
+		EventCount:       2,
+		ComponentsSeen:   []string{"DBAUDIT"},
+		ThreatScore:      96,
+		Status:           "CONTAINED",
 		MitigationAction: "PB-DBA-03: DBAudit 熔断连接并生成等保紧急存证工单",
-		TriggeredRule:  "HIGH_RISK_DDL_DROP_TRUNCATE",
-		FirstSeen:      now.Add(-2 * time.Hour),
-		LastSeen:       now.Add(-2 * time.Hour),
+		TriggeredRule:    "HIGH_RISK_DDL_DROP_TRUNCATE",
+		FirstSeen:        now.Add(-2 * time.Hour),
+		LastSeen:         now.Add(-2 * time.Hour),
 	}
 	inc2.DigitalSignature = e.computeIncidentSignature(inc2)
 	e.incidents[inc2.SourceIP] = inc2

@@ -251,13 +251,13 @@ func (m *Manager) UpdateClassification(id string, zone SecurityZone, crit Critic
 
 // Stats 资产统计概览
 type Stats struct {
-	TotalAssets        int            `json:"total_assets"`
-	Tier1CriticalCount int            `json:"tier1_critical_count"`
-	Tier2ImportantCount int           `json:"tier2_important_count"`
-	Tier3GeneralCount   int           `json:"tier3_general_count"`
-	ZoneDistribution   map[string]int `json:"zone_distribution"`
-	AvgComplianceScore float64        `json:"avg_compliance_score"`
-	OnlineCount        int            `json:"online_count"`
+	TotalAssets         int            `json:"total_assets"`
+	Tier1CriticalCount  int            `json:"tier1_critical_count"`
+	Tier2ImportantCount int            `json:"tier2_important_count"`
+	Tier3GeneralCount   int            `json:"tier3_general_count"`
+	ZoneDistribution    map[string]int `json:"zone_distribution"`
+	AvgComplianceScore  float64        `json:"avg_compliance_score"`
+	OnlineCount         int            `json:"online_count"`
 }
 
 // GetStats 计算资产统计数据

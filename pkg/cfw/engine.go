@@ -13,9 +13,9 @@ import (
 
 // Engine 微隔离防火墙核心引擎
 type Engine struct {
-	mu        sync.RWMutex
-	zones     map[string]NetworkZone // CIDR or IP -> Zone
-	rules     []*SecurityRule
+	mu            sync.RWMutex
+	zones         map[string]NetworkZone // CIDR or IP -> Zone
+	rules         []*SecurityRule
 	defaultAction FirewallAction
 }
 

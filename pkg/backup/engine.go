@@ -15,30 +15,30 @@ import (
 
 // BackupSnapshot 等保 2.0 三级数据备份快照实体
 type BackupSnapshot struct {
-	SnapshotID          string `json:"snapshot_id"`
-	CreatedAt           int64  `json:"created_at"`
-	StorageLocation     string `json:"storage_location"`     // LOCAL_VAULT, OFFSITE_DISASTER_RECOVERY
-	Encrypted           bool   `json:"encrypted"`
-	EncryptionAlgorithm string `json:"encryption_algorithm"` // SM4-128-CBC
-	SM3Checksum         string `json:"sm3_checksum"`         // 明文内容的 SM3 杂凑防篡改
-	SM2Signature        string `json:"sm2_signature"`        // SM2 私钥电子印章
-	CipherPayloadHex    string `json:"cipher_payload_hex"`   // 加密后密文 (十六进制)
-	RawSize             int    `json:"raw_size"`
-	EncryptedSize       int    `json:"encrypted_size"`
-	Status              string `json:"status"`               // VERIFIED, RESTORED, CORRUPTED
+	SnapshotID          string   `json:"snapshot_id"`
+	CreatedAt           int64    `json:"created_at"`
+	StorageLocation     string   `json:"storage_location"` // LOCAL_VAULT, OFFSITE_DISASTER_RECOVERY
+	Encrypted           bool     `json:"encrypted"`
+	EncryptionAlgorithm string   `json:"encryption_algorithm"` // SM4-128-CBC
+	SM3Checksum         string   `json:"sm3_checksum"`         // 明文内容的 SM3 杂凑防篡改
+	SM2Signature        string   `json:"sm2_signature"`        // SM2 私钥电子印章
+	CipherPayloadHex    string   `json:"cipher_payload_hex"`   // 加密后密文 (十六进制)
+	RawSize             int      `json:"raw_size"`
+	EncryptedSize       int      `json:"encrypted_size"`
+	Status              string   `json:"status"` // VERIFIED, RESTORED, CORRUPTED
 	ModulesIncluded     []string `json:"modules_included"`
 }
 
 // RestoreResult 容灾恢复演练结果
 type RestoreResult struct {
-	SnapshotID       string `json:"snapshot_id"`
-	RestoredAt       int64  `json:"restored_at"`
-	IntegrityValid   bool   `json:"integrity_valid"`
-	SM3Verified      bool   `json:"sm3_verified"`
-	SM2SigVerified   bool   `json:"sm2_sig_verified"`
+	SnapshotID       string   `json:"snapshot_id"`
+	RestoredAt       int64    `json:"restored_at"`
+	IntegrityValid   bool     `json:"integrity_valid"`
+	SM3Verified      bool     `json:"sm3_verified"`
+	SM2SigVerified   bool     `json:"sm2_sig_verified"`
 	RestoredModules  []string `json:"restored_modules"`
-	ComplianceStatus string `json:"compliance_status"` // PASS / FAIL
-	Details          string `json:"details"`
+	ComplianceStatus string   `json:"compliance_status"` // PASS / FAIL
+	Details          string   `json:"details"`
 }
 
 // BackupEngine 容灾备份与国密存证引擎

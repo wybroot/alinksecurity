@@ -31,20 +31,20 @@ const claimsContextKey = contextKey("admin_claims")
 
 // HTTPServer 安全管理中心 Web API 服务
 type HTTPServer struct {
-	userStore      *UserStore
-	policyStore    *PolicyStore
-	auditTrail     *AuditTrail
-	dashboardSvc   *dashboard.Service
-	evaluator      *compliance.Evaluator
-	bastionEngine  *bastion.Engine
-	bastionSM      *bastion.SessionManager
-	simRunner      *simulator.Runner
-	backupEngine   *backup.BackupEngine
-	soarEngine     *soar.SOAREngine
-	assetMgr       *asset.Manager
-	alertDisp      *alert.Dispatcher
-	jwtSecret      []byte
-	mux            *http.ServeMux
+	userStore     *UserStore
+	policyStore   *PolicyStore
+	auditTrail    *AuditTrail
+	dashboardSvc  *dashboard.Service
+	evaluator     *compliance.Evaluator
+	bastionEngine *bastion.Engine
+	bastionSM     *bastion.SessionManager
+	simRunner     *simulator.Runner
+	backupEngine  *backup.BackupEngine
+	soarEngine    *soar.SOAREngine
+	assetMgr      *asset.Manager
+	alertDisp     *alert.Dispatcher
+	jwtSecret     []byte
+	mux           *http.ServeMux
 }
 
 // NewHTTPServer 初始化管理后台 HTTP 服务
@@ -58,20 +58,20 @@ func NewHTTPServer(jwtSecret []byte) *HTTPServer {
 	bkEngine, _ := backup.NewBackupEngine()
 
 	s := &HTTPServer{
-		userStore:      NewUserStore(),
-		policyStore:    NewPolicyStore(),
-		auditTrail:     NewAuditTrail(),
-		dashboardSvc:   dashboard.NewService(),
-		evaluator:      compliance.NewEvaluator(),
-		bastionEngine:  bEngine,
-		bastionSM:      bSM,
-		simRunner:      simulator.NewRunner(),
-		backupEngine:   bkEngine,
-		soarEngine:     soar.NewSOAREngine(),
-		assetMgr:       asset.NewManager(),
-		alertDisp:      alert.NewDispatcher(5 * time.Minute),
-		jwtSecret:      jwtSecret,
-		mux:            http.NewServeMux(),
+		userStore:     NewUserStore(),
+		policyStore:   NewPolicyStore(),
+		auditTrail:    NewAuditTrail(),
+		dashboardSvc:  dashboard.NewService(),
+		evaluator:     compliance.NewEvaluator(),
+		bastionEngine: bEngine,
+		bastionSM:     bSM,
+		simRunner:     simulator.NewRunner(),
+		backupEngine:  bkEngine,
+		soarEngine:    soar.NewSOAREngine(),
+		assetMgr:      asset.NewManager(),
+		alertDisp:     alert.NewDispatcher(5 * time.Minute),
+		jwtSecret:     jwtSecret,
+		mux:           http.NewServeMux(),
 	}
 
 	s.seedDefaultBastionSessions()
@@ -430,8 +430,8 @@ func (s *HTTPServer) handleVerifyAuditIntegrity(w http.ResponseWriter, r *http.R
 // 等保合规核查报告
 func (s *HTTPServer) handleComplianceReport(w http.ResponseWriter, r *http.Request) {
 	report := map[string]any{
-		"standard":    "GB/T 22239-2019 (等保 2.0 三级 S3A3G3)",
-		"system_name": "AlinkSec 模块化安全中枢与防御矩阵",
+		"standard":     "GB/T 22239-2019 (等保 2.0 三级 S3A3G3)",
+		"system_name":  "AlinkSec 模块化安全中枢与防御矩阵",
 		"generated_at": time.Now().Format(time.RFC3339),
 		"checkpoints": []map[string]any{
 			{
@@ -1043,4 +1043,3 @@ func (s *HTTPServer) handleTriggerAlertSimulation(w http.ResponseWriter, r *http
 		"stats":            s.alertDisp.GetStats(),
 	})
 }
-

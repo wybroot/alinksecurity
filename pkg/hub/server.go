@@ -33,12 +33,12 @@ type RegisteredAgent struct {
 // HubServer 实现了 pb.AlinkSecHubServiceServer 接口
 type HubServer struct {
 	pb.UnimplementedAlinkSecHubServiceServer
-	mu               sync.RWMutex
-	agents           map[string]*RegisteredAgent
-	latestPolicyVer  string
-	latestPolicies   map[pb.AgentType]*pb.PolicyPackage
-	eventCh          chan *pb.RawSecurityEvent
-	lastChainedHash  string
+	mu              sync.RWMutex
+	agents          map[string]*RegisteredAgent
+	latestPolicyVer string
+	latestPolicies  map[pb.AgentType]*pb.PolicyPackage
+	eventCh         chan *pb.RawSecurityEvent
+	lastChainedHash string
 }
 
 // NewHubServer 创建 Hub 服务实例

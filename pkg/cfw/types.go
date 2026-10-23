@@ -48,12 +48,12 @@ type PacketContext struct {
 
 // FirewallEvent 拦截告警事件
 type FirewallEvent struct {
-	EventID        string         `json:"event_id"`
-	Timestamp      time.Time      `json:"timestamp"`
-	Context        PacketContext  `json:"context"`
-	MatchedRuleID  string         `json:"matched_rule_id"`
-	Action         FirewallAction `json:"action"`
-	IsViolation    bool           `json:"is_violation"`
-	ViolationType  string         `json:"violation_type,omitempty"`
-	Reason         string         `json:"reason,omitempty"`
+	EventID       string         `json:"event_id"`
+	Timestamp     time.Time      `json:"timestamp"`
+	Context       PacketContext  `json:"context"`
+	MatchedRuleID string         `json:"matched_rule_id"`
+	Action        FirewallAction `json:"action"`
+	IsViolation   bool           `json:"is_violation"`
+	ViolationType string         `json:"violation_type,omitempty"`
+	Reason        string         `json:"reason,omitempty"`
 }

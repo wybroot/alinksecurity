@@ -99,7 +99,7 @@ func TestDetectorReverseShellAndMaliciousTools(t *testing.T) {
 			proc: ProcessInfo{
 				PID:         2004,
 				Name:        "powershell.exe",
-				CommandLine: b64("cG93ZXJzaGVsbC5leGUgLW5vcCAtZW5jIEpBQlNBSUFBUEFBQU5RQmlBR2d...") ,
+				CommandLine: b64("cG93ZXJzaGVsbC5leGUgLW5vcCAtZW5jIEpBQlNBSUFBUEFBQU5RQmlBR2d..."),
 				Executable:  "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
 			},
 			expectMatch: true,

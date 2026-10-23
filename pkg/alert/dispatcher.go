@@ -32,18 +32,18 @@ type ChannelConfig struct {
 
 // AggregatedAlert 聚合降噪后的告警
 type AggregatedAlert struct {
-	GroupKey       string    `json:"group_key"`
-	SourceIP       string    `json:"source_ip"`
-	Component      string    `json:"component"`
-	ThreatType     string    `json:"threat_type"`
-	Severity       string    `json:"severity"`
-	Message        string    `json:"message"`
-	FirstSeen      time.Time `json:"first_seen"`
-	LastSeen       time.Time `json:"last_seen"`
-	Occurrences    int       `json:"occurrences"`    // 累计触发次数
-	SuppressedCnt  int       `json:"suppressed_cnt"` // 被静默降噪次数
-	Status         string    `json:"status"`         // "AGGREGATING", "DISPATCHED"
-	DispatchedTo   []string  `json:"dispatched_to"`  // 成功分发渠道
+	GroupKey      string    `json:"group_key"`
+	SourceIP      string    `json:"source_ip"`
+	Component     string    `json:"component"`
+	ThreatType    string    `json:"threat_type"`
+	Severity      string    `json:"severity"`
+	Message       string    `json:"message"`
+	FirstSeen     time.Time `json:"first_seen"`
+	LastSeen      time.Time `json:"last_seen"`
+	Occurrences   int       `json:"occurrences"`    // 累计触发次数
+	SuppressedCnt int       `json:"suppressed_cnt"` // 被静默降噪次数
+	Status        string    `json:"status"`         // "AGGREGATING", "DISPATCHED"
+	DispatchedTo  []string  `json:"dispatched_to"`  // 成功分发渠道
 }
 
 // Dispatcher 告警聚合降噪与多渠道分发器

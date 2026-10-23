@@ -29,18 +29,18 @@ type WAFMetrics struct {
 
 // Config WAF 配置
 type Config struct {
-	ListenAddr   string `json:"listen_addr"`   // WAF 侦听端口 (如 :8000)
-	UpstreamURL  string `json:"upstream_url"`  // 后端被保护应用 (如 http://127.0.0.1:8080)
-	AgentID      string `json:"agent_id"`      // WAF 探针唯一标识
-	HubAddr      string `json:"hub_addr"`      // 安全中枢 gRPC 地址 (可选，留空则完全离线独立运行)
-	MaxCCLimit   int    `json:"max_cc_limit"`  // CC 频控上限 (10秒内次数)
+	ListenAddr  string `json:"listen_addr"`  // WAF 侦听端口 (如 :8000)
+	UpstreamURL string `json:"upstream_url"` // 后端被保护应用 (如 http://127.0.0.1:8080)
+	AgentID     string `json:"agent_id"`     // WAF 探针唯一标识
+	HubAddr     string `json:"hub_addr"`     // 安全中枢 gRPC 地址 (可选，留空则完全离线独立运行)
+	MaxCCLimit  int    `json:"max_cc_limit"` // CC 频控上限 (10秒内次数)
 }
 
 // Agent WAF 实例
 type Agent struct {
-	cfg        Config
-	engine     *Engine
-	metrics    WAFMetrics
+	cfg          Config
+	engine       *Engine
+	metrics      WAFMetrics
 	hubClient    pb.AlinkSecHubServiceClient
 	grpcConn     *grpc.ClientConn
 	sessionToken string

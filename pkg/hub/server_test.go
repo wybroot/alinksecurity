@@ -83,13 +83,13 @@ func TestRegisterAndHeartbeat(t *testing.T) {
 
 	// 2. 测试心跳探活 (正常情况)
 	hbResp, err := client.SendHeartbeat(ctx, &pb.HeartbeatRequest{
-		AgentId:           "agent-edr-001",
-		SessionToken:      token,
-		Timestamp:         time.Now().Unix(),
-		CpuUsage:          12.5,
-		MemoryUsedBytes:   1024 * 1024 * 250,
-		DiskUsedBytes:     1024 * 1024 * 1024 * 10,
-		ActiveRulesCount:  3,
+		AgentId:          "agent-edr-001",
+		SessionToken:     token,
+		Timestamp:        time.Now().Unix(),
+		CpuUsage:         12.5,
+		MemoryUsedBytes:  1024 * 1024 * 250,
+		DiskUsedBytes:    1024 * 1024 * 1024 * 10,
+		ActiveRulesCount: 3,
 	})
 	if err != nil {
 		t.Fatalf("SendHeartbeat failed: %v", err)

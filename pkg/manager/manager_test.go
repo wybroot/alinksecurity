@@ -399,5 +399,3 @@ func TestAssetAndAlertEndpoints(t *testing.T) {
 		t.Fatalf("expected simulation success")
 	}
 }
-
-

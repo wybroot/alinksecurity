@@ -35,18 +35,18 @@ type ThreatEventSummary struct {
 
 // OverviewData 态势大屏总览聚合数据
 type OverviewData struct {
-	ClusterHealth       string                 `json:"cluster_health"` // "HEALTHY", "WARNING", "CRITICAL"
-	TotalAgents         int                    `json:"total_agents"`
-	OnlineAgents        int                    `json:"online_agents"`
-	TotalThreatsToday   int                    `json:"total_threats_today"`
-	BlockedThreatsToday int                    `json:"blocked_threats_today"`
-	SeverityCounts      map[string]int         `json:"severity_counts"`
-	ComponentThreats    map[string]int         `json:"component_threats"`
-	Agents              []AgentTelemetry       `json:"agents"`
-	RecentEvents        []ThreatEventSummary   `json:"recent_events"`
+	ClusterHealth       string                       `json:"cluster_health"` // "HEALTHY", "WARNING", "CRITICAL"
+	TotalAgents         int                          `json:"total_agents"`
+	OnlineAgents        int                          `json:"online_agents"`
+	TotalThreatsToday   int                          `json:"total_threats_today"`
+	BlockedThreatsToday int                          `json:"blocked_threats_today"`
+	SeverityCounts      map[string]int               `json:"severity_counts"`
+	ComponentThreats    map[string]int               `json:"component_threats"`
+	Agents              []AgentTelemetry             `json:"agents"`
+	RecentEvents        []ThreatEventSummary         `json:"recent_events"`
 	Compliance          *compliance.EvaluationResult `json:"compliance"`
-	LogStorageDays      int                    `json:"log_storage_days"` // 等保合规留存 180+
-	HashChainIntegrity  bool                   `json:"hash_chain_integrity"` // 区块链哈希防篡改
+	LogStorageDays      int                          `json:"log_storage_days"`     // 等保合规留存 180+
+	HashChainIntegrity  bool                         `json:"hash_chain_integrity"` // 区块链哈希防篡改
 }
 
 // Service 态势感知聚合服务

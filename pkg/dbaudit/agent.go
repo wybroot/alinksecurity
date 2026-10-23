@@ -19,39 +19,39 @@ import (
 
 // AgentConfig 数据库审计探针配置
 type AgentConfig struct {
-	AgentID       string        `json:"agent_id"`
-	Hostname      string        `json:"hostname"`
-	HubAddr       string        `json:"hub_addr"`
-	ListenAddr    string        `json:"listen_addr"`    // 审计代理监听地址 (例如 0.0.0.0:13306)
-	TargetDBAddr  string        `json:"target_db_addr"` // 目标真实数据库地址 (例如 127.0.0.1:3306)
-	Protocol      DBProtocol    `json:"protocol"`       // 审计目标协议 (MySQL / PostgreSQL)
-	HeartbeatSec  time.Duration `json:"heartbeat_sec"`
-	Standalone    bool          `json:"standalone"`
-	AuditLogPath  string        `json:"audit_log_path"`
+	AgentID      string        `json:"agent_id"`
+	Hostname     string        `json:"hostname"`
+	HubAddr      string        `json:"hub_addr"`
+	ListenAddr   string        `json:"listen_addr"`    // 审计代理监听地址 (例如 0.0.0.0:13306)
+	TargetDBAddr string        `json:"target_db_addr"` // 目标真实数据库地址 (例如 127.0.0.1:3306)
+	Protocol     DBProtocol    `json:"protocol"`       // 审计目标协议 (MySQL / PostgreSQL)
+	HeartbeatSec time.Duration `json:"heartbeat_sec"`
+	Standalone   bool          `json:"standalone"`
+	AuditLogPath string        `json:"audit_log_path"`
 }
 
 // DBAuditAgent 数据库审计探针
 type DBAuditAgent struct {
-	cfg          *AgentConfig
-	analyzer     *SQLAnalyzer
-	mysqlParser  *MySQLParser
-	pgParser     *PGParser
-	ctx          context.Context
-	cancel       context.CancelFunc
-	token        string
-	policyVer    string
-	listener     net.Listener
-	wg           sync.WaitGroup
+	cfg         *AgentConfig
+	analyzer    *SQLAnalyzer
+	mysqlParser *MySQLParser
+	pgParser    *PGParser
+	ctx         context.Context
+	cancel      context.CancelFunc
+	token       string
+	policyVer   string
+	listener    net.Listener
+	wg          sync.WaitGroup
 
 	// 指标
-	totalQueries   uint64
-	threatCount    uint64
-	connCount      int32
+	totalQueries uint64
+	threatCount  uint64
+	connCount    int32
 
 	// gRPC 客户端连接
-	grpcConn     *grpc.ClientConn
-	hubClient    pb.AlinkSecHubServiceClient
-	eventStream  pb.AlinkSecHubService_ReportEventsClient
+	grpcConn      *grpc.ClientConn
+	hubClient     pb.AlinkSecHubServiceClient
+	eventStream   pb.AlinkSecHubService_ReportEventsClient
 	eventStreamMu sync.Mutex
 
 	// 审计事件回调 (用于测试与订阅)
@@ -431,7 +431,7 @@ func (a *DBAuditAgent) reportThreatEvent(record *AuditRecord) {
 		RuleId:          record.RuleID,
 		Message:         fmt.Sprintf("[%s] %s: %s", record.Protocol, record.ThreatType, record.ThreatReason),
 		RawPayload:      payloadJSON,
-		Signature:        hex.EncodeToString(hash[:]),
+		Signature:       hex.EncodeToString(hash[:]),
 	}
 
 	a.eventStreamMu.Lock()

@@ -6,11 +6,11 @@ import "time"
 type LogSourceType string
 
 const (
-	SourceSyslog   LogSourceType = "SYSLOG"   // 系统登录鉴权日志 (/var/log/secure, /var/log/auth.log)
-	SourceNginx    LogSourceType = "NGINX"    // Web 反代与访问日志
-	SourceWAF      LogSourceType = "WAF"      // WAF 拦截日志
-	SourceDB       LogSourceType = "DATABASE" // 数据库操作审计日志
-	SourceApp      LogSourceType = "APP"      // 业务应用关键日志
+	SourceSyslog LogSourceType = "SYSLOG"   // 系统登录鉴权日志 (/var/log/secure, /var/log/auth.log)
+	SourceNginx  LogSourceType = "NGINX"    // Web 反代与访问日志
+	SourceWAF    LogSourceType = "WAF"      // WAF 拦截日志
+	SourceDB     LogSourceType = "DATABASE" // 数据库操作审计日志
+	SourceApp    LogSourceType = "APP"      // 业务应用关键日志
 )
 
 // LogEntry 采集的单条日志记录

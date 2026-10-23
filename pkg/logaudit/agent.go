@@ -28,12 +28,12 @@ type AgentConfig struct {
 
 // LogAgent 统一日志审计轻量探针
 type LogAgent struct {
-	cfg          *AgentConfig
-	collector    *Collector
-	ctx          context.Context
-	cancel       context.CancelFunc
-	token        string
-	wg           sync.WaitGroup
+	cfg       *AgentConfig
+	collector *Collector
+	ctx       context.Context
+	cancel    context.CancelFunc
+	token     string
+	wg        sync.WaitGroup
 
 	// 指标
 	totalCollected uint64
@@ -199,7 +199,7 @@ func (a *LogAgent) heartbeatLoop() {
 				AgentId:          a.cfg.AgentID,
 				SessionToken:     a.token,
 				Timestamp:        time.Now().Unix(),
-				CpuUsage:         0.2, // 超低 CPU 占用 (<0.5%)
+				CpuUsage:         0.2,              // 超低 CPU 占用 (<0.5%)
 				MemoryUsedBytes:  12 * 1024 * 1024, // 内存锁定稳定在 12MB-15MB
 				DiskUsedBytes:    20 * 1024 * 1024,
 				ActiveRulesCount: 1, // 日志归集管道数
@@ -238,7 +238,7 @@ func (a *LogAgent) reportBatchToHub(batch *LogBatch) {
 		RuleId:          "MLPS-LOG-180D",
 		Message:         fmt.Sprintf("Sealed log batch %s (%d records, sha: %s)", batch.BatchID, batch.Count, batch.BatchSha256[:8]),
 		RawPayload:      payloadJSON,
-		Signature:        hex.EncodeToString(hash[:]),
+		Signature:       hex.EncodeToString(hash[:]),
 	}
 
 	a.eventStreamMu.Lock()

@@ -13,8 +13,8 @@ func TestBackupAndRestoreFlow(t *testing.T) {
 
 	// 1. 创建快照
 	sampleData := map[string]interface{}{
-		"system": "alinksec",
-		"policies": []string{"waf-rule-1", "cfw-zone-crossing", "edr-baseline"},
+		"system":    "alinksec",
+		"policies":  []string{"waf-rule-1", "cfw-zone-crossing", "edr-baseline"},
 		"timestamp": 1729780000,
 	}
 	rawBytes, _ := json.Marshal(sampleData)
