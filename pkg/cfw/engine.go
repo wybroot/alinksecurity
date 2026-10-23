@@ -1,0 +1,294 @@
+package cfw
+
+import (
+	"crypto/rand"
+	"encoding/hex"
+	"fmt"
+	"net"
+	"sort"
+	"strings"
+	"sync"
+	"time"
+)
+
+// Engine 微隔离防火墙核心引擎
+type Engine struct {
+	mu        sync.RWMutex
+	zones     map[string]NetworkZone // CIDR or IP -> Zone
+	rules     []*SecurityRule
+	defaultAction FirewallAction
+}
+
+// NewEngine 构造防火墙微隔离引擎
+func NewEngine() *Engine {
+	e := &Engine{
+		zones:         make(map[string]NetworkZone),
+		rules:         make([]*SecurityRule, 0),
+		defaultAction: ActionDrop,
+	}
+	e.initDefaultRules()
+	return e
+}
+
+// RegisterZoneMapping 注册 IP/CIDR 归属安全域
+func (e *Engine) RegisterZoneMapping(cidr string, zone NetworkZone) error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	// 校验 CIDR 或 IP
+	if !strings.Contains(cidr, "/") {
+		if ip := net.ParseIP(cidr); ip == nil {
+			return fmt.Errorf("invalid ip address: %s", cidr)
+		}
+	} else {
+		if _, _, err := net.ParseCIDR(cidr); err != nil {
+			return fmt.Errorf("invalid cidr: %w", err)
+		}
+	}
+
+	e.zones[cidr] = zone
+	return nil
+}
+
+// LookupZone 根据 IP 检索归属安全域
+func (e *Engine) LookupZone(ipStr string) NetworkZone {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	targetIP := net.ParseIP(ipStr)
+	if targetIP == nil {
+		return ZoneUnknown
+	}
+
+	// 1. 精确 IP 匹配
+	if z, exists := e.zones[ipStr]; exists {
+		return z
+	}
+
+	// 2. CIDR 子网匹配
+	for cidr, z := range e.zones {
+		if strings.Contains(cidr, "/") {
+			_, subnet, err := net.ParseCIDR(cidr)
+			if err == nil && subnet.Contains(targetIP) {
+				return z
+			}
+		}
+	}
+
+	return ZoneUnknown
+}
+
+// AddRule 添加微隔离规则
+func (e *Engine) AddRule(rule *SecurityRule) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	if rule.ID == "" {
+		b := make([]byte, 4)
+		_, _ = rand.Read(b)
+		rule.ID = fmt.Sprintf("CFW-%s", hex.EncodeToString(b))
+	}
+
+	e.rules = append(e.rules, rule)
+	// 按优先级从小到大排序
+	sort.Slice(e.rules, func(i, j int) bool {
+		return e.rules[i].Priority < e.rules[j].Priority
+	})
+}
+
+// SetRules 整体原子替换规则集
+func (e *Engine) SetRules(rules []*SecurityRule) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	e.rules = make([]*SecurityRule, len(rules))
+	copy(e.rules, rules)
+	sort.Slice(e.rules, func(i, j int) bool {
+		return e.rules[i].Priority < e.rules[j].Priority
+	})
+}
+
+// EvaluatePacket 评估单个网络连接/数据包是否放行
+func (e *Engine) EvaluatePacket(ctx PacketContext) *FirewallEvent {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	if ctx.SrcZone == "" || ctx.SrcZone == ZoneUnknown {
+		ctx.SrcZone = e.LookupZone(ctx.SrcIP)
+	}
+	if ctx.DstZone == "" || ctx.DstZone == ZoneUnknown {
+		ctx.DstZone = e.LookupZone(ctx.DstIP)
+	}
+
+	evt := &FirewallEvent{
+		EventID:     fmt.Sprintf("cfw-%d", time.Now().UnixNano()%10000000),
+		Timestamp:   time.Now(),
+		Context:     ctx,
+		Action:      e.defaultAction,
+		IsViolation: false,
+	}
+
+	// 规则优先匹配
+	for _, rule := range e.rules {
+		if e.matchRule(rule, ctx) {
+			evt.MatchedRuleID = rule.ID
+			evt.Action = rule.Action
+
+			if rule.Action == ActionDrop {
+				evt.IsViolation = true
+				evt.ViolationType = "EXPLICIT_RULE_DROP"
+				evt.Reason = fmt.Sprintf("匹配阻断规则 [%s]: %s", rule.ID, rule.Description)
+			}
+			return evt
+		}
+	}
+
+	// 等保 2.0 边界强制硬核防线: DMZ 区严禁直连 DATA 区 (GB/T 22239-2019 8.1.3.1 区域边界结构安全)
+	if ctx.SrcZone == ZoneDMZ && ctx.DstZone == ZoneData {
+		evt.Action = ActionDrop
+		evt.IsViolation = true
+		evt.ViolationType = "ZONE_BOUNDARY_CROSSING"
+		evt.Reason = "等保 2.0 红线违规: 严禁外联 DMZ 区主机绕过 APP 业务层直连 DATA 核心数据区"
+		evt.MatchedRuleID = "MLPS-ZONE-CROSSING-DROP"
+		return evt
+	}
+
+	// 默认动作判定
+	if e.defaultAction == ActionDrop {
+		evt.IsViolation = true
+		evt.ViolationType = "DEFAULT_ZERO_TRUST_DROP"
+		evt.Reason = "未命中任何白名单规则，微隔离零信任默认阻断"
+		evt.MatchedRuleID = "DEFAULT-DROP"
+	}
+
+	return evt
+}
+
+func (e *Engine) matchRule(rule *SecurityRule, ctx PacketContext) bool {
+	// 1. 区域匹配 (若指定)
+	if rule.SrcZone != "" && rule.SrcZone != ZoneUnknown && rule.SrcZone != ctx.SrcZone {
+		return false
+	}
+	if rule.DstZone != "" && rule.DstZone != ZoneUnknown && rule.DstZone != ctx.DstZone {
+		return false
+	}
+
+	// 2. IP / CIDR 匹配
+	if rule.SrcCIDR != "" && !ipMatchCIDR(ctx.SrcIP, rule.SrcCIDR) {
+		return false
+	}
+	if rule.DstCIDR != "" && !ipMatchCIDR(ctx.DstIP, rule.DstCIDR) {
+		return false
+	}
+
+	// 3. 协议匹配
+	if rule.Protocol != "" && rule.Protocol != "ANY" && !strings.EqualFold(rule.Protocol, ctx.Protocol) {
+		return false
+	}
+
+	// 4. 端口匹配
+	if rule.DstPort != 0 && rule.DstPort != ctx.DstPort {
+		return false
+	}
+
+	return true
+}
+
+func ipMatchCIDR(ipStr, cidrStr string) bool {
+	if ipStr == cidrStr {
+		return true
+	}
+	if strings.Contains(cidrStr, "/") {
+		_, subnet, err := net.ParseCIDR(cidrStr)
+		if err == nil {
+			ip := net.ParseIP(ipStr)
+			return ip != nil && subnet.Contains(ip)
+		}
+	}
+	return false
+}
+
+// ExportNftables 导出 Linux nftables 格式规则集
+func (e *Engine) ExportNftables() string {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	var sb strings.Builder
+	sb.WriteString("#!/usr/sbin/nft -f\n")
+	sb.WriteString("# Generated by AlinkSec CloudFirewall (GB/T 22239-2019 MLPS3)\n\n")
+	sb.WriteString("flush ruleset\n\n")
+	sb.WriteString("table inet alinksec_filter {\n")
+	sb.WriteString("    chain forward {\n")
+	sb.WriteString("        type filter hook forward priority 0; policy drop;\n")
+	sb.WriteString("        # 允许已建立连接\n")
+	sb.WriteString("        ct state established,related accept\n\n")
+
+	for _, r := range e.rules {
+		var parts []string
+		if r.Protocol != "" && r.Protocol != "ANY" {
+			parts = append(parts, strings.ToLower(r.Protocol))
+		}
+		if r.SrcCIDR != "" {
+			parts = append(parts, fmt.Sprintf("ip saddr %s", r.SrcCIDR))
+		}
+		if r.DstCIDR != "" {
+			parts = append(parts, fmt.Sprintf("ip daddr %s", r.DstCIDR))
+		}
+		if r.DstPort > 0 {
+			parts = append(parts, fmt.Sprintf("dport %d", r.DstPort))
+		}
+
+		action := "drop"
+		if r.Action == ActionAllow {
+			action = "accept"
+		}
+		parts = append(parts, action)
+		sb.WriteString(fmt.Sprintf("        %s comment \"%s\"\n", strings.Join(parts, " "), r.Description))
+	}
+
+	sb.WriteString("    }\n}\n")
+	return sb.String()
+}
+
+func (e *Engine) initDefaultRules() {
+	// 默认合规基础安全域
+	_ = e.RegisterZoneMapping("10.0.1.0/24", ZoneDMZ)
+	_ = e.RegisterZoneMapping("10.0.2.0/24", ZoneApp)
+	_ = e.RegisterZoneMapping("10.0.3.0/24", ZoneData)
+	_ = e.RegisterZoneMapping("10.0.99.0/24", ZoneManagement)
+
+	// 规则 1: 允许外部访问 DMZ 80/443
+	e.AddRule(&SecurityRule{
+		ID:          "CFW-PERMIT-WEB-PUBLIC",
+		Priority:    10,
+		DstZone:     ZoneDMZ,
+		Protocol:    "TCP",
+		DstPort:     443,
+		Action:      ActionAllow,
+		Description: "允许外部流量访问 DMZ 负载均衡与 WAF HTTPS 服务",
+	})
+
+	// 规则 2: 允许 DMZ 访问 APP 业务端口 (8080)
+	e.AddRule(&SecurityRule{
+		ID:          "CFW-PERMIT-DMZ-TO-APP",
+		Priority:    20,
+		SrcZone:     ZoneDMZ,
+		DstZone:     ZoneApp,
+		Protocol:    "TCP",
+		DstPort:     8080,
+		Action:      ActionAllow,
+		Description: "允许 DMZ 反向代理流量流向 APP 应用集群",
+	})
+
+	// 规则 3: 允许 APP 访问 DATA 数据库端口 (3306)
+	e.AddRule(&SecurityRule{
+		ID:          "CFW-PERMIT-APP-TO-DB",
+		Priority:    30,
+		SrcZone:     ZoneApp,
+		DstZone:     ZoneData,
+		Protocol:    "TCP",
+		DstPort:     3306,
+		Action:      ActionAllow,
+		Description: "允许 APP 访问后端 MySQL 数据库",
+	})
+}

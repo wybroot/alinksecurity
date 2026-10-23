@@ -1,0 +1,78 @@
+name: AlinkSec Modular MLPS3 Security Matrix CI
+
+on:
+  push:
+    branches: [ "main", "master", "dev" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  lint-and-test:
+    name: Unit Tests & Code Integrity
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          check-latest: true
+
+      - name: Verify Dependencies
+        run: |
+          go mod verify
+
+      - name: Run All Unit Tests
+        run: |
+          go test -v -coverprofile=coverage.out ./pkg/...
+
+  cross-compile:
+    name: Cross-Compile Modular Binaries (Linux amd64 & arm64)
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Build All Modular Agents (Linux/${{ matrix.arch }})
+        env:
+          CGO_ENABLED: 0
+          GOOS: linux
+          GOARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p dist/linux_${{ matrix.arch }}
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-hub ./cmd/alinksec-hub
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-manager ./cmd/alinksec-manager
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-waf ./cmd/agents/alinksec-waf
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-edr ./cmd/agents/alinksec-edr
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-tamper ./cmd/agents/alinksec-tamper
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-dbaudit ./cmd/agents/alinksec-dbaudit
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-cfw ./cmd/agents/alinksec-cfw
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-log ./cmd/agents/alinksec-log
+          ls -lh dist/linux_${{ matrix.arch }}
+
+  container-e2e:
+    name: Containerized E2E Verification & Attack Simulation
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Verification Docker Image
+        run: |
+          docker build -t alinksec-verify:latest -f deploy/Dockerfile.verify .
+
+      - name: Run E2E Test Suite in Isolated Container
+        run: |
+          docker run --rm -t alinksec-verify:latest

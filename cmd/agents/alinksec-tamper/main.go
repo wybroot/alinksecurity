@@ -14,12 +14,26 @@ import (
 func main() {
 	var (
 		agentID    = flag.String("agent-id", "tamper-node-01", "Tamper Agent unique ID")
+		idAlias    = flag.String("id", "", "Alias for -agent-id")
 		watchDir   = flag.String("watch-dir", "./wwwroot", "Web publish directory to protect")
+		watchAlias = flag.String("watch", "", "Alias for -watch-dir")
 		backupDir  = flag.String("backup-dir", "", "Isolated safe vault directory (default: <watch-dir>_vault)")
+		bakAlias   = flag.String("backup", "", "Alias for -backup-dir")
 		hubAddr    = flag.String("hub", "", "AlinkSec Hub gRPC address (e.g. 127.0.0.1:50051, optional)")
+		standalone = flag.Bool("standalone", false, "Run in standalone offline mode")
 		autoRevert = flag.Bool("auto-revert", true, "Enable millisecond auto-reversion of tampered files")
 	)
 	flag.Parse()
+
+	if *idAlias != "" {
+		*agentID = *idAlias
+	}
+	if *watchAlias != "" {
+		*watchDir = *watchAlias
+	}
+	if *bakAlias != "" {
+		*backupDir = *bakAlias
+	}
 
 	logger.InitGlobalLogger(logger.Config{
 		Level:  "info",
@@ -30,6 +44,10 @@ func main() {
 	if _, err := os.Stat(*watchDir); os.IsNotExist(err) {
 		_ = os.MkdirAll(*watchDir, 0755)
 		_ = os.WriteFile(*watchDir+"/index.html", []byte("<html><body><h1>Protected Enterprise Web Application</h1></body></html>"), 0644)
+	}
+
+	if *standalone {
+		*hubAddr = ""
 	}
 
 	cfg := tamper.Config{
