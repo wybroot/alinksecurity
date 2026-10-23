@@ -375,7 +375,15 @@ func (s *HTTPServer) handleComplianceReport(w http.ResponseWriter, r *http.Reque
 
 // handleIndex 渲染态势大屏前端单页
 func (s *HTTPServer) handleIndex(w http.ResponseWriter, r *http.Request) {
-	content, err := os.ReadFile("web/index.html")
+	paths := []string{"web/index.html", "/app/web/index.html", "../../web/index.html"}
+	var content []byte
+	var err error
+	for _, p := range paths {
+		content, err = os.ReadFile(p)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		// 备用嵌入式 HTML
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")

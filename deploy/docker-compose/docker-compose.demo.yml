@@ -30,8 +30,8 @@ services:
     networks:
       - alinksec-net
     ports:
-      - "8123:8123"
-      - "9000:9000"
+      - "18123:8123"
+      - "19000:9000"
     environment:
       CLICKHOUSE_DB: alinksec
       CLICKHOUSE_USER: alinksec
@@ -42,6 +42,7 @@ services:
 
   # 3. AlinkSec 南向控制中枢 (gRPC)
   alinksec-hub:
+    image: alinksec-verify:latest
     build:
       context: ../..
       dockerfile: deploy/Dockerfile.verify
@@ -51,12 +52,11 @@ services:
       - alinksec-net
     ports:
       - "50051:50051"
-    depends_on:
-      - nats-server
     restart: unless-stopped
 
-  # 4. AlinkSec 北向管理中心 & 态势大屏 Web 控制台 (HTTP 8080)
+  # 4. AlinkSec 北向管理中心 & 态势大屏 Web 控制台 (HTTP 18080)
   alinksec-manager:
+    image: alinksec-verify:latest
     build:
       context: ../..
       dockerfile: deploy/Dockerfile.verify
@@ -65,7 +65,7 @@ services:
     networks:
       - alinksec-net
     ports:
-      - "8080:8080"
+      - "${ALINKSEC_PORT:-18080}:8080"
     depends_on:
       - alinksec-hub
     restart: unless-stopped

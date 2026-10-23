@@ -18,6 +18,6 @@ cd "$(dirname "$0")/../deploy/docker-compose"
 docker compose -f docker-compose.demo.yml up -d --build
 
 echo -e "\n${GREEN}✓ 演示服务已在隔离容器内全量启动成功！${NC}"
-echo -e "  -> 态势感知大屏与管理控制台: ${CYAN}http://localhost:8080/${NC}"
-echo -e "  -> 等保 2.0 三级自检报告:   ${CYAN}http://localhost:8080/api/v1/compliance/export.md${NC}"
+echo -e "  -> 态势感知大屏与管理控制台: ${CYAN}http://localhost:18080/${NC}"
+echo -e "  -> 等保 2.0 三级自检报告:   ${CYAN}http://localhost:18080/api/v1/compliance/export.md${NC}"
 echo -e "  -> 南向 gRPC 接入中枢:      ${CYAN}localhost:50051${NC}"

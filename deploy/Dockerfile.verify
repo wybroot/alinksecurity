@@ -25,5 +25,16 @@ RUN tr -d '\r' < scripts/verify_in_container.sh > scripts/verify_in_container_lf
     mv scripts/verify_in_container_lf.sh scripts/verify_in_container.sh && \
     chmod +x scripts/*.sh
 
+# 预编译全套核心组件 Linux ELF 二进制 (供容器服务与演示直接运行)
+RUN mkdir -p /app/build_bin && \
+    go build -o /app/build_bin/alinksec-hub ./cmd/alinksec-hub && \
+    go build -o /app/build_bin/alinksec-manager ./cmd/alinksec-manager && \
+    go build -o /app/build_bin/alinksec-waf ./cmd/agents/alinksec-waf && \
+    go build -o /app/build_bin/alinksec-edr ./cmd/agents/alinksec-edr && \
+    go build -o /app/build_bin/alinksec-tamper ./cmd/agents/alinksec-tamper && \
+    go build -o /app/build_bin/alinksec-dbaudit ./cmd/agents/alinksec-dbaudit && \
+    go build -o /app/build_bin/alinksec-cfw ./cmd/agents/alinksec-cfw && \
+    go build -o /app/build_bin/alinksec-log ./cmd/agents/alinksec-log
+
 # 默认运行容器内端到端全量验证
 CMD ["/bin/sh", "scripts/verify_in_container.sh"]
