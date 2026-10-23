@@ -2,7 +2,7 @@
 # AlinkSec Verification & CI Sandbox Container
 # 纯 Linux 沙盒验证容器，宿主机杀毒软件零接触、零误杀
 # ==============================================================================
-FROM golang:1.22-alpine
+FROM golang:alpine
 
 WORKDIR /app
 

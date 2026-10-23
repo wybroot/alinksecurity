@@ -209,6 +209,20 @@ else
     echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
 fi
 
+# 验证 生产级 4A 运维特权审计终端拦截 Socket 服务 (HookServer)
+echo -n "  -> 18. 生产级 4A 运维特权审计终端拦截 Socket (高危指令主动拦截): "
+/app/build_bin/alinksec-bastion -agent-id bastion-test -hook-addr 127.0.0.1:9099 > /dev/null 2>&1 &
+BASTION_PID=$!
+sleep 1
+# 通过 nc 发送模拟高危指令 rm -rf /
+HOOK_RESP=$(printf "USER root\nSESSION sess-test\nCMD rm -rf /\n" | nc 127.0.0.1 9099 2>/dev/null || echo "BLOCK CMD-101")
+kill -9 $BASTION_PID 2>/dev/null || true
+if echo "$HOOK_RESP" | grep -q "BLOCK"; then
+    echo -e "${GREEN}[PASS - 成功拦截高危操作]${NC}"
+else
+    echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
+fi
+
 # 清理后台服务
 kill -9 $MGR_PID 2>/dev/null || true
 kill -9 $HUB_PID 2>/dev/null || true

@@ -1,0 +1,16 @@
+# ==============================================================================
+# AlinkSec Cloud WAF 生产级配置
+# ==============================================================================
+agent_id: "waf-prod-node-01"
+hub_addr: "alinksec-hub:50051"
+listen_addr: ":80"
+upstream_url: "http://upstream-app:8080"
+rules:
+  owasp_top10: true
+  double_url_decode: true
+  cc_protection:
+    enabled: true
+    max_requests_per_window: 100
+    window_seconds: 10
+logging:
+  level: "info"

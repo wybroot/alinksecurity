@@ -1,0 +1,11 @@
+# ==============================================================================
+# AlinkSec Bastion 4A 运维特权审计生产级配置
+# ==============================================================================
+agent_id: "bastion-prod-node-01"
+hub_addr: "alinksec-hub:50051"
+hook_listen_addr: "127.0.0.1:9099" # Shell / PAM 拦截查询套接字
+recording_dir: "/var/alinksec/bastion/recordings"
+block_high_risk_commands: true
+strict_2fa_reeval: true
+logging:
+  level: "info"

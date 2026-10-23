@@ -16,6 +16,7 @@ import (
 func main() {
 	agentID := flag.String("id", "agent-bastion-01", "Bastion 4A privileged audit agent identifier")
 	hubAddr := flag.String("hub", "127.0.0.1:50051", "AlinkSec Hub gRPC address")
+	hookAddr := flag.String("hook-addr", "", "Bastion 4A real-time command audit TCP socket hook address")
 	standalone := flag.Bool("standalone", false, "Run in standalone mode without connecting to Hub")
 	evalCmd := flag.String("eval-cmd", "", "Evaluate a command against 4A rules and exit")
 	evalSession := flag.Bool("eval-session", false, "Run full mock session and export tamper-proof certificate")
@@ -91,6 +92,15 @@ func main() {
 	if err := agent.Start(ctx); err != nil {
 		logger.Error("Failed to start bastion agent", "error", err)
 		os.Exit(1)
+	}
+
+	if *hookAddr != "" {
+		hookSrv := bastion.NewHookServer(agent, *hookAddr)
+		go func() {
+			if err := hookSrv.Start(ctx); err != nil {
+				logger.Error("Bastion hook server failed", "error", err)
+			}
+		}()
 	}
 
 	logger.Info("AlinkSec Bastion 4A agent is running", "id", *agentID)

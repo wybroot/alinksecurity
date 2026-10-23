@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"alinksec/pkg/config"
 	"alinksec/pkg/logger"
 	"alinksec/pkg/manager"
 )
@@ -27,11 +28,21 @@ func main() {
 		Format: "json",
 	}, os.Stdout)
 
-	server := manager.NewHTTPServer([]byte(*jwtSecret))
+	secret := []byte(*jwtSecret)
 	addr := fmt.Sprintf(":%d", *port)
 	if *addrFlag != "" {
 		addr = *addrFlag
 	}
+
+	cfg := config.LoadManagerConfig()
+	if *addrFlag == "" && cfg.HTTPPort > 0 {
+		addr = fmt.Sprintf(":%d", cfg.HTTPPort)
+	}
+	if cfg.JWTSecret != "" && *jwtSecret == "alinksec-production-secret-key-32b!" {
+		secret = []byte(cfg.JWTSecret)
+	}
+
+	server := manager.NewHTTPServer(secret)
 
 	httpServer := &http.Server{
 		Addr:         addr,

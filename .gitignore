@@ -15,10 +15,10 @@ node_modules/
 
 # Logs & Runtime Data
 *.log
-data/
-storage/
-temp/
-tmp/
+/data/
+/storage/
+/temp/
+/tmp/
 
 # Secrets & Private Keys (Strict for MLPS3 Compliance)
 *.pem

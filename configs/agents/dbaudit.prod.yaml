@@ -1,0 +1,11 @@
+# ==============================================================================
+# AlinkSec DBAudit 生产级配置
+# ==============================================================================
+agent_id: "dbaudit-prod-node-01"
+hub_addr: "alinksec-hub:50051"
+protocol: "mysql" # mysql | postgres
+listen_addr: "0.0.0.0:33060" # 透明代理监听地址
+target_db_addr: "mysql-master:3306" # 目标真实数据库后端
+high_risk_ddl_blocking: true # 主动熔断 DROP / TRUNCATE
+logging:
+  level: "info"

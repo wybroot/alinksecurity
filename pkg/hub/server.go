@@ -5,12 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 	"time"
 
 	pb "alinksec/api/proto/v1"
 	"alinksec/pkg/crypto"
+	"alinksec/pkg/eventbus"
 	"alinksec/pkg/logger"
+	"alinksec/pkg/storage"
 )
 
 // RegisteredAgent 内存中记录的 Agent 状态
@@ -39,16 +42,29 @@ type HubServer struct {
 	latestPolicies  map[pb.AgentType]*pb.PolicyPackage
 	eventCh         chan *pb.RawSecurityEvent
 	lastChainedHash string
+
+	// 生产级存储与事件总线扩展
+	storage    storage.StorageEngine
+	clickhouse *storage.ClickHouseWriter
+	bus        eventbus.Bus
 }
 
 // NewHubServer 创建 Hub 服务实例
 func NewHubServer() *HubServer {
+	return NewProductionHubServer(nil, nil, nil)
+}
+
+// NewProductionHubServer 创建生产级 Hub 服务实例
+func NewProductionHubServer(store storage.StorageEngine, chWriter *storage.ClickHouseWriter, bus eventbus.Bus) *HubServer {
 	s := &HubServer{
 		agents:          make(map[string]*RegisteredAgent),
 		latestPolicyVer: "v1.0.0",
 		latestPolicies:  make(map[pb.AgentType]*pb.PolicyPackage),
 		eventCh:         make(chan *pb.RawSecurityEvent, 10000),
 		lastChainedHash: "0000000000000000000000000000000000000000000000000000000000000000",
+		storage:         store,
+		clickhouse:      chWriter,
+		bus:             bus,
 	}
 
 	// 初始化一个基准策略包 (用于示例与验证)
@@ -102,6 +118,72 @@ func (s *HubServer) initDefaultPolicies() {
 	s.latestPolicies[pb.AgentType_AGENT_TAMPER] = defaultPkg
 }
 
+// SetStorageEngine 配置生产关系数据库持久化引擎 (PostgreSQL)
+func (s *HubServer) SetStorageEngine(se storage.StorageEngine) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.storage = se
+}
+
+// SetClickHouseWriter 配置等保 180 天原始日志与审计 ClickHouse 写入器
+func (s *HubServer) SetClickHouseWriter(cw *storage.ClickHouseWriter) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.clickhouse = cw
+}
+
+// SetEventBus 配置 NATS 生产事件总线
+func (s *HubServer) SetEventBus(b eventbus.Bus) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.bus = b
+}
+
+// StartHeartbeatMonitor 启动探针心跳离线监测看门狗 (生产高可用)
+func (s *HubServer) StartHeartbeatMonitor(ctx context.Context, interval, timeout time.Duration) {
+	if interval <= 0 {
+		interval = 10 * time.Second
+	}
+	if timeout <= 0 {
+		timeout = 30 * time.Second
+	}
+
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				s.mu.Lock()
+				now := time.Now()
+				for id, a := range s.agents {
+					if a.Status == "online" && now.Sub(a.LastHeartbeatTime) > timeout {
+						a.Status = "offline"
+						logger.Warn("Agent detected OFFLINE (heartbeat timeout)",
+							"agent_id", id,
+							"agent_type", a.AgentType.String(),
+							"ip", a.IP,
+							"last_seen", a.LastHeartbeatTime.Format(time.RFC3339),
+						)
+					}
+				}
+				store := s.storage
+				s.mu.Unlock()
+
+				// 若配置了持久化数据库，同步标记持久化层状态
+				if store != nil {
+					if _, err := store.MarkOfflineAgents(ctx, timeout); err != nil {
+						logger.Warn("Failed to sync offline agents to postgres", "err", err)
+					}
+				}
+			}
+		}
+	}()
+}
+
 // RegisterAgent 探针上线注册
 func (s *HubServer) RegisterAgent(ctx context.Context, req *pb.RegisterRequest) (*pb.RegisterResponse, error) {
 	if req.AgentId == "" {
@@ -120,8 +202,6 @@ func (s *HubServer) RegisterAgent(ctx context.Context, req *pb.RegisterRequest) 
 	}
 
 	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	s.agents[req.AgentId] = &RegisteredAgent{
 		AgentID:           req.AgentId,
 		AgentType:         req.AgentType,
@@ -131,6 +211,29 @@ func (s *HubServer) RegisterAgent(ctx context.Context, req *pb.RegisterRequest) 
 		SessionToken:      token,
 		Status:            "online",
 		LastHeartbeatTime: time.Now(),
+	}
+
+	store := s.storage
+	s.mu.Unlock()
+
+	// 生产持久化落盘
+	if store != nil {
+		go func() {
+			rec := &storage.AgentRecord{
+				AgentID:           req.AgentId,
+				AgentType:         req.AgentType,
+				AgentTypeStr:      req.AgentType.String(),
+				Version:           req.Version,
+				Hostname:          req.Hostname,
+				IP:                req.Ip,
+				SessionToken:      token,
+				Status:            "online",
+				LastHeartbeatTime: time.Now(),
+			}
+			if err := store.SaveAgent(context.Background(), rec); err != nil {
+				logger.Warn("Failed to persist registered agent to PostgreSQL", "err", err)
+			}
+		}()
 	}
 
 	logger.Info("Agent registered successfully",
@@ -170,6 +273,14 @@ func (s *HubServer) SendHeartbeat(ctx context.Context, req *pb.HeartbeatRequest)
 	agent.Status = "online"
 
 	needSync := agent.CurrentPolicyVer != s.latestPolicyVer
+	store := s.storage
+
+	// 异步更新数据库心跳指标
+	if store != nil {
+		go func(aID string, cpu float32, mem, disk int64, rules int32, pVer string) {
+			_ = store.UpdateAgentHeartbeat(context.Background(), aID, cpu, mem, disk, rules, pVer)
+		}(req.AgentId, req.CpuUsage, req.MemoryUsedBytes, req.DiskUsedBytes, req.ActiveRulesCount, agent.CurrentPolicyVer)
+	}
 
 	return &pb.HeartbeatResponse{
 		Acknowledged:        true,
@@ -207,9 +318,50 @@ func (s *HubServer) ReportEvents(stream pb.AlinkSecHubService_ReportEventsServer
 		s.mu.Lock()
 		eventPayload := fmt.Sprintf("%s|%s|%d|%s", event.EventId, event.AgentId, event.EventTime, event.Message)
 		s.lastChainedHash = crypto.ComputeChainedHash(s.lastChainedHash, []byte(eventPayload))
+		currentChainHash := s.lastChainedHash
+		cw := s.clickhouse
+		eb := s.bus
 		s.mu.Unlock()
 
 		count++
+
+		// 生产级 ClickHouse 批处理持久化 (留存 >= 180天)
+		if cw != nil {
+			cw.WriteSecurityEvent(&storage.SecurityEventRecord{
+				EventID:    event.EventId,
+				SourceType: event.SourceAgentType.String(),
+				AgentID:    event.AgentId,
+				HostIP:     event.HostIp,
+				Hostname:   event.Hostname,
+				EventTime:  time.Unix(event.EventTime, 0),
+				Level:      event.Level.String(),
+				Category:   event.Category,
+				RuleID:     event.RuleId,
+				Message:    event.Message,
+				RawPayload: string(event.RawPayload),
+				Signature:  string(event.Signature),
+				ChainHash:  currentChainHash,
+			})
+		}
+
+		// 生产级 NATS 事件总线广播 (供 SOAR、告警降噪与态势流消费)
+		if eb != nil {
+			subject := fmt.Sprintf("alinksec.events.%s", strings.ToLower(event.SourceAgentType.String()))
+			_ = eb.Publish(subject, &eventbus.EventMessage{
+				EventID:     event.EventId,
+				SourceType:  event.SourceAgentType.String(),
+				AgentID:     event.AgentId,
+				SourceIP:    event.HostIp,
+				Hostname:    event.Hostname,
+				Level:       event.Level.String(),
+				RuleID:      event.RuleId,
+				ThreatType:  event.Category,
+				Message:     event.Message,
+				RawPayload:  string(event.RawPayload),
+				EventTime:   time.Unix(event.EventTime, 0),
+				ChainedHash: currentChainHash,
+			})
+		}
 
 		// 非阻塞投递到内部处理管道
 		select {

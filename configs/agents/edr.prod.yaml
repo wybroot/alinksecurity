@@ -1,0 +1,16 @@
+# ==============================================================================
+# AlinkSec Host EDR 生产级配置
+# ==============================================================================
+agent_id: "edr-prod-host-01"
+hub_addr: "alinksec-hub:50051"
+heartbeat_interval: "10s"
+baseline_audit_interval: "30m"
+active_scan:
+  enabled: true
+  interval: "5s"
+  quarantine_threats: false # 生产环境建议先告警后隔离
+brute_force:
+  max_attempts: 5
+  window_seconds: 60
+logging:
+  level: "info"

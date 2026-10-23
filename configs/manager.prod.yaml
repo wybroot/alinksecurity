@@ -1,0 +1,32 @@
+# ==============================================================================
+# AlinkSec Manager (北向业务安全管理中枢) 生产级生产环境配置
+# 遵循 GB/T 22239-2019 等保 2.0 三级标准 (S3A3G3)
+# ==============================================================================
+
+server:
+  http_port: 8080
+  listen_addr: "0.0.0.0:8080"
+  static_dir: "web"
+
+security:
+  jwt_secret: "alinksec-mlps3-super-secret-key-2026-production-min32b"
+  jwt_ttl: "2h"
+  totp_window: 1 # RFC 6238 TOTP 容错窗口 (±30s)
+  three_role_separation: true # 强制系统员、安全员、审计员权限互斥
+
+storage:
+  engine: "postgres"
+  postgres:
+    dsn: "postgres://alinksec:AlinkSec@2026!@postgres:5432/alinksec_db?sslmode=disable"
+
+audit:
+  blockchain_chain: true # 启用区块链式 SHA-256 / SM3 防篡改哈希链
+  retention_days: 365 # 审计日志至少留存 365 天
+
+soar:
+  auto_mitigation: true
+  closed_loop_timeout: "15ms"
+
+logging:
+  level: "info"
+  format: "json"

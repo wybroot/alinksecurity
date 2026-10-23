@@ -239,3 +239,40 @@ func TestReportEventsStreaming(t *testing.T) {
 		t.Fatal("expected anti-tamper chained hash to be updated, but remained unchanged")
 	}
 }
+
+func TestHeartbeatTimeoutOffline(t *testing.T) {
+	client, hubServer, cleanup := setupTestGRPC(t)
+	defer cleanup()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// 注册探针
+	_, err := client.RegisterAgent(ctx, &pb.RegisterRequest{
+		AgentId:   "agent-timeout-test",
+		AgentType: pb.AgentType_AGENT_EDR,
+		Hostname:  "test-node",
+		Ip:        "192.168.1.50",
+	})
+	if err != nil {
+		t.Fatalf("register failed: %v", err)
+	}
+
+	// 验证初始状态为 online
+	ag, ok := hubServer.GetAgent("agent-timeout-test")
+	if !ok || ag.Status != "online" {
+		t.Fatalf("expected agent to be online, got %v", ag)
+	}
+
+	// 启动心跳检测看门狗 (心跳超时阈值设为 50ms)
+	hubServer.StartHeartbeatMonitor(ctx, 20*time.Millisecond, 50*time.Millisecond)
+
+	// 等待 100ms 模拟心跳中断
+	time.Sleep(120 * time.Millisecond)
+
+	ag, _ = hubServer.GetAgent("agent-timeout-test")
+	if ag.Status != "offline" {
+		t.Fatalf("expected agent to be marked offline after timeout, got: %s", ag.Status)
+	}
+}
+

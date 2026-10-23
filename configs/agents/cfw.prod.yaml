@@ -1,0 +1,20 @@
+# ==============================================================================
+# AlinkSec Cloud Firewall & Micro-segmentation 生产级配置
+# ==============================================================================
+agent_id: "cfw-prod-node-01"
+hub_addr: "alinksec-hub:50051"
+default_action: "DROP"
+zones:
+  - name: "DMZ"
+    subnets: ["10.0.1.0/24", "172.16.1.0/24"]
+  - name: "APP"
+    subnets: ["10.0.2.0/24", "172.16.2.0/24"]
+  - name: "DATA"
+    subnets: ["10.0.3.0/24", "172.16.3.0/24"]
+  - name: "MANAGEMENT"
+    subnets: ["10.0.99.0/24"]
+enforcement:
+  dry_run: false
+  engine: "nftables" # nftables | iptables
+logging:
+  level: "info"
