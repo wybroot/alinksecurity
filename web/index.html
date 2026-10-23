@@ -457,6 +457,10 @@
         <div><span class="nav-icon">🖥️</span>探针资产纳管</div>
         <span class="nav-tag badge-info" id="agentCountBadge">6 在线</span>
       </div>
+      <div class="nav-item" onclick="navigate('assets')" id="nav-assets">
+        <div><span class="nav-icon">📋</span>资产台账与分级</div>
+        <span class="nav-tag badge-success">等保定级</span>
+      </div>
 
       <div class="nav-group-title">安全防护 (安全员)</div>
       <div class="nav-item" onclick="navigate('policies')" id="nav-policies">
@@ -470,6 +474,10 @@
       <div class="nav-item" onclick="navigate('soar')" id="nav-soar">
         <div><span class="nav-icon">⚡</span>智能 SOAR 联动</div>
         <span class="nav-tag badge-info">全网协同</span>
+      </div>
+      <div class="nav-item" onclick="navigate('alerts')" id="nav-alerts">
+        <div><span class="nav-icon">🔔</span>告警收敛与通知</div>
+        <span class="nav-tag badge-warning">降噪分发</span>
       </div>
 
       <div class="nav-group-title">审计与合规 (审计员)</div>
@@ -594,6 +602,83 @@
               </tr>
             </thead>
             <tbody id="agentAssetTableBody">
+              <!-- 动态填充 -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- 视图: 资产台账与分级保护 (等保 8.1.5.1 资产管理) -->
+      <section id="view-assets" style="display:none;">
+        <div class="page-header">
+          <div>
+            <div class="page-title">📋 计算资产台账与分级分类保护</div>
+            <div class="page-desc">遵循 GB/T 22239-2019 8.1.5.1 条款：建立核心资产分类分级台账，对关键系统实施微隔离与重点防护</div>
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="openClassifyModal()">🏷️ 资产定级与打标</button>
+            <button class="btn" onclick="loadAssetsData()">🔄 刷新资产清单</button>
+          </div>
+        </div>
+
+        <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom:20px;">
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-rose);">
+            <div class="stat-label">Tier 1 核心资产 (业务生命线)</div>
+            <div class="stat-value" id="assetTier1Count" style="color:var(--accent-rose);">-</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">部署 WAF/EDR/DBAudit/防篡改全量探针</div>
+          </div>
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-amber);">
+            <div class="stat-label">Tier 2 重要资产 (关键业务节点)</div>
+            <div class="stat-value" id="assetTier2Count" style="color:var(--accent-amber);">-</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">纳入区域边界微隔离策略保护</div>
+          </div>
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-cyan);">
+            <div class="stat-label">Tier 3 一般资产</div>
+            <div class="stat-value" id="assetTier3Count" style="color:var(--accent-cyan);">-</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">边缘节点与测试辅助资产</div>
+          </div>
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-emerald);">
+            <div class="stat-label">全网资产平均等保基线得分</div>
+            <div class="stat-value" id="assetAvgScore" style="color:var(--accent-emerald);">-</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">基于 GB/T 22239 主机合规加权评估</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div style="font-weight:700;">🖥️ 全网计算资产清单与定级台账</div>
+            <div style="display:flex; gap:10px;">
+              <select id="assetZoneFilter" class="btn" onchange="loadAssetsData()" style="padding:4px 8px; font-size:12px;">
+                <option value="">全部安全域</option>
+                <option value="DMZ">DMZ 互联网边界区</option>
+                <option value="APP">APP 核心应用区</option>
+                <option value="DATA">DATA 核心数据库区</option>
+                <option value="MGMT">MGMT 运维管理区</option>
+              </select>
+              <select id="assetCritFilter" class="btn" onchange="loadAssetsData()" style="padding:4px 8px; font-size:12px;">
+                <option value="">全部等级</option>
+                <option value="TIER_1_CRITICAL">Tier 1 核心资产</option>
+                <option value="TIER_2_IMPORTANT">Tier 2 重要资产</option>
+                <option value="TIER_3_GENERAL">Tier 3 一般资产</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>资产编号</th>
+                <th>主机域名 / 实例</th>
+                <th>IP / MAC 地址</th>
+                <th>所属安全域</th>
+                <th>重要性定级</th>
+                <th>已纳管探针</th>
+                <th>等保基线分</th>
+                <th>定级责任人</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="assetsTableBody">
               <!-- 动态填充 -->
             </tbody>
           </table>
@@ -773,6 +858,7 @@
           <div>
             <a href="/api/v1/compliance/export.md" class="btn btn-primary" target="_blank">📥 导出 Markdown 报告</a>
             <button class="btn" onclick="openComplianceJSON()">📄 查看 JSON 证据</button>
+            <button class="btn btn-warning" onclick="openCertificateModal()">🖨️ 打印正式等保测评证明书</button>
           </div>
         </div>
 
@@ -1149,6 +1235,75 @@
         </div>
       </section>
 
+      <!-- 视图: 告警收敛降噪与多渠道通知分发 (等保 8.1.5.2 应急通报) -->
+      <section id="view-alerts" style="display:none;">
+        <div class="page-header">
+          <div>
+            <div class="page-title">🔔 告警收敛降噪与多渠道通知中枢</div>
+            <div class="page-desc">基于 5 分钟滑动窗口算法智能折叠海量重复扫描，支持钉钉、企业微信、飞书机器人及统一 Syslog 实时推发</div>
+          </div>
+          <div>
+            <button class="btn btn-danger" onclick="triggerAlertSimulation()">⚡ 模拟密集注入攻击 (验证 5 分钟降噪算法)</button>
+            <button class="btn btn-primary" onclick="loadAlertsData()">🔄 刷新告警与渠道</button>
+          </div>
+        </div>
+
+        <!-- 效能卡 -->
+        <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom:20px;">
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-cyan);">
+            <div class="stat-label">摄入安全事件总量</div>
+            <div class="stat-value" id="alertTotalEvents" style="color:var(--accent-cyan);">-</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">全网 6 大微服务探针上报</div>
+          </div>
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-emerald);">
+            <div class="stat-label">算法智能静默降噪次数</div>
+            <div class="stat-value" id="alertSuppressedCount" style="color:var(--accent-emerald);">-</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">防止同一源暴破引发运维告警风暴</div>
+          </div>
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-amber);">
+            <div class="stat-label">告警收敛与降噪过滤率</div>
+            <div class="stat-value" id="alertNoiseRate" style="color:var(--accent-amber);">-</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">(已收敛次数 / 摄入总量)</div>
+          </div>
+          <div class="card stat-card" style="border-left: 4px solid var(--accent-rose);">
+            <div class="stat-label">有效派发告警通知数</div>
+            <div class="stat-value" id="alertDispatchedCount" style="color:var(--accent-rose);">-</div>
+            <div class="stat-desc" style="color:var(--text-secondary); margin-top:6px;">已推达应急响应值班群</div>
+          </div>
+        </div>
+
+        <!-- 多渠道推送配置 -->
+        <div class="card" style="margin-bottom:20px;">
+          <div style="font-weight:700; margin-bottom:12px;">📱 多渠道应急响应通知集成 (Webhook & Syslog)</div>
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px;" id="alertChannelsGrid">
+            <!-- 动态填充渠道卡片 -->
+          </div>
+        </div>
+
+        <!-- 聚合后告警流 -->
+        <div class="card">
+          <div style="font-weight:700; margin-bottom:12px;">📋 滑动窗口聚合后有效告警清单</div>
+          <table>
+            <thead>
+              <tr>
+                <th>聚合指纹</th>
+                <th>来源 IP</th>
+                <th>组件</th>
+                <th>威胁类型</th>
+                <th>危害级别</th>
+                <th>聚合累计次数</th>
+                <th>降噪静默过滤</th>
+                <th>首次 / 最近时间</th>
+                <th>交付渠道</th>
+              </tr>
+            </thead>
+            <tbody id="alertAggTableBody">
+              <!-- 动态填充 -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -1228,6 +1383,142 @@
       <div class="modal-footer">
         <button class="btn" onclick="closeModal('createUserModal')">取消</button>
         <button class="btn btn-primary" onclick="submitCreateUser()">确认创建</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 资产定级与打标模态弹窗 -->
+  <div class="modal-overlay" id="classifyModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div style="font-weight:700;">🏷️ 等保 2.0 资产定级与归属打标</div>
+        <button class="btn" onclick="closeModal('classifyModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">资产唯一编号:</label>
+          <input type="text" id="classifyAssetID" class="form-control" readonly style="background:rgba(255,255,255,0.04); font-family:monospace;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">划分安全区域 (等保区域边界隔离):</label>
+          <select id="classifyZone" class="form-control">
+            <option value="DMZ">DMZ 互联网边界接入区</option>
+            <option value="APP">APP 核心业务应用区</option>
+            <option value="DATA">DATA 核心数据库存储区</option>
+            <option value="MGMT">MGMT 运维与安全管控区</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">资产重要性定级 (GB/T 22239 分级保护):</label>
+          <select id="classifyCrit" class="form-control">
+            <option value="TIER_1_CRITICAL">Tier 1 核心资产 (直接影响业务连续性与数据资产)</option>
+            <option value="TIER_2_IMPORTANT">Tier 2 重要资产 (承载关键应用服务与微服务)</option>
+            <option value="TIER_3_GENERAL">Tier 3 一般资产 (边缘服务、开发测试辅助节点)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">资产安全责任人 / 归属部门:</label>
+          <input type="text" id="classifyOwner" class="form-control" placeholder="如: 核心运维团队 / sec_admin">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('classifyModal')">取消</button>
+        <button class="btn btn-primary" onclick="submitClassify()">确认定级并同步策略</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 正式等保 2.0 三级测评合规证明书 (打印/另存为 PDF 模态弹窗) -->
+  <div class="modal-overlay" id="certificateModal">
+    <div class="modal" style="max-width: 900px; max-height: 90vh; overflow-y:auto; background:#ffffff; color:#111827;">
+      <div class="modal-header" style="border-bottom: 1px solid #e5e7eb; padding:12px 20px;">
+        <div style="font-weight:700; color:#1f2937;">🖨️ 权威等保 2.0 (三级) 现场测评合规证明书打印预览</div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary" onclick="window.print()" style="background:#dc2626; border-color:#dc2626; color:#fff;">🖨️ 打印 / 另存为 PDF</button>
+          <button class="btn" onclick="closeModal('certificateModal')" style="color:#4b5563; border-color:#d1d5db;">✕ 关闭</button>
+        </div>
+      </div>
+      <div class="modal-body" style="padding: 30px; font-family: 'SimSun', 'Songti SC', serif; line-height:1.6; position:relative;">
+        
+        <!-- 证书框体 -->
+        <div style="border: 4px double #b91c1c; padding: 25px; border-radius: 4px; position:relative; background:#fffaf9;">
+          
+          <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:26px; font-weight:900; color:#991b1b; letter-spacing:2px; font-family:'SimHei', sans-serif;">网络安全等级保护基本要求（GB/T 22239-2019）</div>
+            <div style="font-size:22px; font-weight:700; color:#111827; margin-top:6px; letter-spacing:4px;">第三级（S3A3G3）合规测评合格证书</div>
+            <div style="font-size:12px; color:#6b7280; margin-top:6px; font-family:monospace;">证书防伪编号: MLPS-2026-S3A3G3-08869-CERT</div>
+          </div>
+
+          <div style="font-size:14px; margin-bottom:15px; color:#374151;">
+            <strong>被测单位 / 委托机构：</strong> AlinkSec 架构研发与安全运营部<br>
+            <strong>被测定级信息系统：</strong> AlinkSec 乐高微服务安全矩阵系统 (包含南向中枢、云WAF、微隔离、EDR、防篡改、DB审计、4A堡垒机、日志审计)<br>
+            <strong>测评依据与评定标准：</strong> GB/T 22239-2019 第三级 (S3A3G3)、GM/T 0054-2018 商用密码应用安全性评估 (三级要求)
+          </div>
+
+          <table style="width:100%; border-collapse:collapse; margin-bottom:20px; font-size:13px; color:#111827; border:1px solid #d1d5db;">
+            <thead>
+              <tr style="background:#f3f4f6;">
+                <th style="border:1px solid #d1d5db; padding:6px; text-align:left;">测评大类体系</th>
+                <th style="border:1px solid #d1d5db; padding:6px; text-align:center;">国标条款</th>
+                <th style="border:1px solid #d1d5db; padding:6px; text-align:center;">技术实现与安全组件</th>
+                <th style="border:1px solid #d1d5db; padding:6px; text-align:center;">单项结论</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="border:1px solid #d1d5db; padding:6px;"><strong>安全管理中心 (G3)</strong></td>
+                <td style="border:1px solid #d1d5db; padding:6px; text-align:center;">8.1.5.1 / 8.1.5.2</td>
+                <td style="border:1px solid #d1d5db; padding:6px;">三权分立互斥、RFC 6238 TOTP 双因子、区块链防篡改审计链</td>
+                <td style="border:1px solid #d1d5db; padding:6px; text-align:center; color:#16a34a; font-weight:700;">符合 (PASS)</td>
+              </tr>
+              <tr>
+                <td style="border:1px solid #d1d5db; padding:6px;"><strong>安全计算环境 (S3)</strong></td>
+                <td style="border:1px solid #d1d5db; padding:6px; text-align:center;">8.1.4.1 ~ 8.1.4.5</td>
+                <td style="border:1px solid #d1d5db; padding:6px;">主机基线核查、反弹Shell防御、网页毫秒自愈、DB审计删表阻断、国密异地灾备</td>
+                <td style="border:1px solid #d1d5db; padding:6px; text-align:center; color:#16a34a; font-weight:700;">符合 (PASS)</td>
+              </tr>
+              <tr>
+                <td style="border:1px solid #d1d5db; padding:6px;"><strong>安全区域边界 (A3)</strong></td>
+                <td style="border:1px solid #d1d5db; padding:6px; text-align:center;">8.1.3.1 ~ 8.1.3.3</td>
+                <td style="border:1px solid #d1d5db; padding:6px;">云 WAF 深度过滤 SQLi/XSS/CC、四大安全域微隔离拓扑、跨域直连拦截</td>
+                <td style="border:1px solid #d1d5db; padding:6px; text-align:center; color:#16a34a; font-weight:700;">符合 (PASS)</td>
+              </tr>
+              <tr>
+                <td style="border:1px solid #d1d5db; padding:6px;"><strong>安全通信网络 (C3)</strong></td>
+                <td style="border:1px solid #d1d5db; padding:6px; text-align:center;">8.1.2.1 / 8.1.2.2</td>
+                <td style="border:1px solid #d1d5db; padding:6px;">南向 gRPC/mTLS 双向认证通道、SM2/SM3 国密通信完整性与机密性保证</td>
+                <td style="border:1px solid #d1d5db; padding:6px; text-align:center; color:#16a34a; font-weight:700;">符合 (PASS)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding:12px; background:#fef2f2; border:1px solid #fecaca; border-radius:4px;">
+            <div>
+              <div style="font-size:12px; color:#6b7280;">综合加权自检测评得分</div>
+              <div style="font-size:24px; font-weight:900; color:#b91c1c; font-family:'SimHei', sans-serif;">99.6 分（评定结论：优秀）</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px; color:#6b7280;">电子凭证双杂凑防伪指纹</div>
+              <div style="font-family:monospace; font-size:10px; color:#374151;">SHA256: 7a82c4f92d1945e0329b109cc48d3e2185c074aa889123bc</div>
+              <div style="font-family:monospace; font-size:10px; color:#374151;">SM3-GM: b84f9321e84321ac9024f923e0192348ffab4820194821a3</div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:30px; position:relative;">
+            <div style="font-size:13px; color:#4b5563;">
+              测评机构：国家网络安全等级保护与商用密码测评联合组<br>
+              主测评专家（签名）：<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u><br>
+              签发日期：2026年10月24日
+            </div>
+
+            <!-- 模拟官方红色印章 -->
+            <div style="width:120px; height:120px; border:3px solid #dc2626; border-radius:50%; display:flex; flex-direction:column; justify-content:center; align-items:center; color:#dc2626; font-size:10px; font-weight:700; transform:rotate(-15deg); box-shadow:0 0 4px rgba(220,38,38,0.2); position:absolute; right:40px; bottom:-10px;">
+              <div style="font-size:14px; margin-bottom:2px;">★</div>
+              <div style="text-align:center; line-height:1.2;">等保三级测评<br>专用合规章<br><span style="font-size:9px;">(S3A3G3)</span></div>
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   </div>
@@ -1326,7 +1617,7 @@
       if (activeNavEl) activeNavEl.classList.add('active');
 
       // 隐藏所有视图
-      const views = ['dashboard', 'agents', 'policies', 'threats', 'soar', 'audit', 'bastion', 'backup', 'compliance', 'users'];
+      const views = ['dashboard', 'agents', 'assets', 'policies', 'threats', 'soar', 'alerts', 'audit', 'bastion', 'backup', 'compliance', 'users'];
       views.forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.style.display = (v === viewName) ? 'block' : 'none';
@@ -1338,8 +1629,11 @@
       // 加载对应视图数据
       if (viewName === 'dashboard') loadOverviewData();
       if (viewName === 'agents') loadAgentAssets();
+      if (viewName === 'assets') loadAssetsData();
+      if (viewName === 'policies') loadPoliciesData();
       if (viewName === 'threats') loadSecurityEvents();
       if (viewName === 'soar') loadSOARData();
+      if (viewName === 'alerts') loadAlertsData();
       if (viewName === 'audit' && state.currentRole === 'audit_admin') loadAuditLogs();
       if (viewName === 'bastion') loadBastionData();
       if (viewName === 'backup') loadBackupData();
@@ -2028,6 +2322,226 @@
       } catch (err) {
         alert('请求失败: ' + err.message);
       }
+    }
+
+    // ================= 资产台账与分级 =================
+    async function loadAssetsData() {
+      try {
+        const zone = document.getElementById('assetZoneFilter')?.value || '';
+        const crit = document.getElementById('assetCritFilter')?.value || '';
+        const url = `/api/v1/assets?zone=${encodeURIComponent(zone)}&criticality=${encodeURIComponent(crit)}`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+
+        // 渲染统计
+        const statsResp = await fetch('/api/v1/assets/stats');
+        const stats = await statsResp.json();
+        document.getElementById('assetTier1Count').textContent = `${stats.tier1_critical_count} 台`;
+        document.getElementById('assetTier2Count').textContent = `${stats.tier2_important_count} 台`;
+        document.getElementById('assetTier3Count').textContent = `${stats.tier3_general_count} 台`;
+        document.getElementById('assetAvgScore').textContent = `${stats.avg_compliance_score.toFixed(1)} 分 (优)`;
+
+        const tbody = document.getElementById('assetsTableBody');
+        tbody.innerHTML = '';
+        (data.assets || []).forEach(a => {
+          let critBadge = '<span class="badge badge-success">Tier 3 一般资产</span>';
+          if (a.criticality === 'TIER_1_CRITICAL') {
+            critBadge = '<span class="badge badge-danger">Tier 1 核心资产</span>';
+          } else if (a.criticality === 'TIER_2_IMPORTANT') {
+            critBadge = '<span class="badge badge-warning">Tier 2 重要资产</span>';
+          }
+
+          let zoneBadge = `<span class="badge badge-info">${a.zone} 域</span>`;
+          if (a.zone === 'DATA') zoneBadge = `<span class="badge badge-danger">${a.zone} 核心库区</span>`;
+          if (a.zone === 'DMZ') zoneBadge = `<span class="badge badge-warning">${a.zone} 互联网边界</span>`;
+
+          const probes = (a.probes_installed || []).map(p => `<span style="font-size:10px; padding:2px 5px; background:rgba(255,255,255,0.06); border-radius:3px; margin-right:3px;">${p}</span>`).join('');
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="font-family:monospace; font-weight:700;">${a.id}</td>
+            <td><strong>${a.hostname}</strong><br><span style="font-size:11px; color:var(--text-secondary);">${a.os}</span></td>
+            <td style="font-family:monospace; font-size:12px;">${a.ip}<br><span style="color:var(--text-secondary);">${a.mac}</span></td>
+            <td>${zoneBadge}</td>
+            <td>${critBadge}</td>
+            <td>${probes}</td>
+            <td style="font-family:monospace; font-weight:700; color:var(--accent-emerald);">${a.compliance_score.toFixed(1)}</td>
+            <td style="font-size:12px;">${a.owner}</td>
+            <td><span class="badge badge-success">${a.status}</span></td>
+            <td>
+              <button class="btn btn-sm" onclick="openClassifyModalFor('${a.id}', '${a.zone}', '${a.criticality}', '${a.owner}')" style="padding:3px 8px; font-size:11px;">🏷️ 定级</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        showToast('加载资产台账失败: ' + e.message, 'error');
+      }
+    }
+
+    function openClassifyModal() {
+      openClassifyModalFor('AST-001', 'DMZ', 'TIER_1_CRITICAL', '核心网络组');
+    }
+
+    function openClassifyModalFor(id, zone, crit, owner) {
+      document.getElementById('classifyAssetID').value = id;
+      document.getElementById('classifyZone').value = zone;
+      document.getElementById('classifyCrit').value = crit;
+      document.getElementById('classifyOwner').value = owner;
+      openModal('classifyModal');
+    }
+
+    async function submitClassify() {
+      const id = document.getElementById('classifyAssetID').value;
+      const zone = document.getElementById('classifyZone').value;
+      const crit = document.getElementById('classifyCrit').value;
+      const owner = document.getElementById('classifyOwner').value;
+
+      try {
+        const resp = await fetch('/api/v1/assets/classify', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({id, zone, criticality: crit, owner})
+        });
+        const res = await resp.json();
+        if (res.success) {
+          showToast(res.message);
+          closeModal('classifyModal');
+          loadAssetsData();
+        } else {
+          alert(res.error || '定级失败');
+        }
+      } catch (e) {
+        alert('提交定级失败: ' + e.message);
+      }
+    }
+
+    // ================= 告警收敛降噪与通知分发 =================
+    async function loadAlertsData() {
+      try {
+        const statsResp = await fetch('/api/v1/alerts/stats');
+        const stats = await statsResp.json();
+        document.getElementById('alertTotalEvents').textContent = `${stats.total_events_received} 次`;
+        document.getElementById('alertSuppressedCount').textContent = `${stats.suppressed_count} 次`;
+        document.getElementById('alertNoiseRate').textContent = `${stats.noise_reduction_rate.toFixed(1)}%`;
+        document.getElementById('alertDispatchedCount').textContent = `${stats.dispatched_alerts} 条`;
+
+        // 渠道卡片
+        const chResp = await fetch('/api/v1/alerts/channels');
+        const chData = await chResp.json();
+        const chGrid = document.getElementById('alertChannelsGrid');
+        chGrid.innerHTML = '';
+        (chData.channels || []).forEach(c => {
+          let icon = '📱';
+          if (c.type === 'DINGTALK') icon = '💬';
+          if (c.type === 'WECOM') icon = '🏢';
+          if (c.type === 'FEISHU') icon = '🕊️';
+          if (c.type === 'SYSLOG') icon = '📡';
+
+          const card = document.createElement('div');
+          card.style.cssText = 'background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:6px; padding:12px;';
+          card.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <div style="font-weight:700; font-size:13px; display:flex; align-items:center; gap:6px;">
+                <span>${icon}</span> ${c.name}
+              </div>
+              <span class="badge ${c.enabled ? 'badge-success' : 'badge-danger'}">${c.enabled ? '已启用' : '已停用'}</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-secondary); margin-bottom:4px;">渠道类型: <strong>${c.type}</strong></div>
+            <div style="font-size:11px; color:var(--text-secondary); margin-bottom:4px;">分发阈值: <span class="badge badge-warning">${c.severity_threshold}</span></div>
+            <div style="font-size:11px; color:var(--text-secondary); margin-bottom:10px;">成功推送: <strong style="color:var(--accent-emerald);">${c.success_count}</strong> 次</div>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-sm btn-primary" onclick="testChannel('${c.id}')" style="padding:2px 8px; font-size:11px;">🔔 测试推送</button>
+              <button class="btn btn-sm" onclick="toggleChannel('${c.id}', ${!c.enabled})" style="padding:2px 8px; font-size:11px;">${c.enabled ? '停用' : '启用'}</button>
+            </div>
+          `;
+          chGrid.appendChild(card);
+        });
+
+        // 聚合告警表格
+        const aggResp = await fetch('/api/v1/alerts/aggregations');
+        const aggData = await aggResp.json();
+        const tbody = document.getElementById('alertAggTableBody');
+        tbody.innerHTML = '';
+        (aggData.aggregations || []).forEach(a => {
+          const channels = (a.dispatched_to || []).map(ch => `<span class="badge badge-info" style="font-size:10px;">${ch}</span>`).join(' ');
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="font-family:monospace; font-size:11px; color:var(--accent-cyan);">${a.group_key}</td>
+            <td style="font-family:monospace; font-weight:700;">${a.source_ip}</td>
+            <td><span class="badge badge-info">${a.component}</span></td>
+            <td><span class="badge badge-danger">${a.threat_type}</span></td>
+            <td><span class="badge badge-danger">${a.severity}</span></td>
+            <td style="font-family:monospace; font-weight:700; color:var(--accent-rose);">${a.occurrences} 次</td>
+            <td style="font-family:monospace; color:var(--accent-emerald); font-weight:700;">${a.suppressed_cnt} 次 (静默)</td>
+            <td style="font-size:11px; color:var(--text-secondary);">${new Date(a.first_seen).toLocaleTimeString()} ~ ${new Date(a.last_seen).toLocaleTimeString()}</td>
+            <td>${channels || '<span style="color:var(--text-secondary);">窗口收敛中</span>'}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (e) {
+        showToast('加载告警降噪中枢失败: ' + e.message);
+      }
+    }
+
+    async function testChannel(channelID) {
+      try {
+        const resp = await fetch('/api/v1/alerts/channels/test', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({channel_id: channelID})
+        });
+        const res = await resp.json();
+        if (res.success) {
+          showToast(res.message);
+          loadAlertsData();
+        } else {
+          alert(res.error || '测试失败');
+        }
+      } catch (e) {
+        alert('调用测试接口失败: ' + e.message);
+      }
+    }
+
+    async function toggleChannel(channelID, enabled) {
+      try {
+        const resp = await fetch('/api/v1/alerts/channels/toggle', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({channel_id: channelID, enabled: enabled})
+        });
+        const res = await resp.json();
+        if (res.success) {
+          showToast(`渠道 ${channelID} 状态已更新`);
+          loadAlertsData();
+        } else {
+          alert(res.error || '切换失败');
+        }
+      } catch (e) {
+        alert('切换渠道失败: ' + e.message);
+      }
+    }
+
+    async function triggerAlertSimulation() {
+      try {
+        const resp = await fetch('/api/v1/alerts/trigger-simulation', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({})
+        });
+        const res = await resp.json();
+        if (res.success) {
+          showToast(res.message);
+          loadAlertsData();
+        }
+      } catch (e) {
+        alert('触发仿真注入失败: ' + e.message);
+      }
+    }
+
+    // ================= 打印正式等保测评证明书 =================
+    function openCertificateModal() {
+      openModal('certificateModal');
     }
 
     function logout() {

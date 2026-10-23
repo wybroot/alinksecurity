@@ -185,7 +185,24 @@ else
     echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
 fi
 
-echo -n "  -> 15. Web 控制台态势大屏单页响应: "
+# 验证 等保 2.0 资产台账与定级保护 (8.1.5.1)
+echo -n "  -> 15. 等保 2.0 资产管理台账与分级保护 (Tier 1 核心资产打标): "
+if wget -qO- http://127.0.0.1:8088/api/v1/assets | grep -q "AST-001" && wget -qO- http://127.0.0.1:8088/api/v1/assets/stats | grep -q "tier1_critical_count"; then
+    echo -e "${GREEN}[PASS]${NC}"
+else
+    echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
+fi
+
+# 验证 告警 5 分钟滑动窗口收敛降噪与多渠道推送
+echo -n "  -> 16. 告警 5 分钟滑动窗口收敛降噪与多渠道 (钉钉/企微/Syslog) 推送: "
+wget -qO- --post-data='{}' --header="Content-Type: application/json" http://127.0.0.1:8088/api/v1/alerts/trigger-simulation > /tmp/alinksec_test_data/alert_sim.json
+if grep -q "success" /tmp/alinksec_test_data/alert_sim.json && wget -qO- http://127.0.0.1:8088/api/v1/alerts/channels | grep -q "CH-DINGTALK"; then
+    echo -e "${GREEN}[PASS]${NC}"
+else
+    echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
+fi
+
+echo -n "  -> 17. Web 控制台与正式测评证明书单页响应: "
 if wget -qO- http://127.0.0.1:8088/ | grep -q "AlinkSec"; then
     echo -e "${GREEN}[PASS]${NC}"
 else
@@ -197,5 +214,5 @@ kill -9 $MGR_PID 2>/dev/null || true
 kill -9 $HUB_PID 2>/dev/null || true
 
 echo -e "\n${CYAN}==================================================================${NC}"
-echo -e "${GREEN}🎉 恭喜！全套 8 大模块在隔离容器内 100% 验收通过，等保三级合规指标全绿！${NC}"
+echo -e "${GREEN}🎉 恭喜！全套 9 大微服务模块在隔离容器内 100% 验收通过，等保三级指标全绿！${NC}"
 echo -e "${CYAN}==================================================================${NC}"

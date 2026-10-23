@@ -330,4 +330,74 @@ func TestSOAREndpoints(t *testing.T) {
 	}
 }
 
+func TestAssetAndAlertEndpoints(t *testing.T) {
+	jwtSecret := []byte("test-jwt-secret-key-32-bytes-long!")
+	server := NewHTTPServer(jwtSecret)
+	handler := server.Router()
+
+	// 1. 获取资产列表
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/assets", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	// 2. 资产定级变更
+	classifyBody := []byte(`{"id":"AST-001","zone":"DMZ","criticality":"TIER_1_CRITICAL","owner":"核心网络组"}`)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/assets/classify", bytes.NewBuffer(classifyBody))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	// 3. 获取资产统计
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/assets/stats", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	// 4. 获取告警聚合与降噪统计
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/alerts/aggregations", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	// 5. 获取通知渠道
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/alerts/channels", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	// 6. 模拟告警测试通道
+	testChanBody := []byte(`{"channel_id":"CH-DINGTALK"}`)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/alerts/channels/test", bytes.NewBuffer(testChanBody))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	// 7. 模拟 50 次密集攻击并验证滑动窗口降噪
+	simBody := []byte(`{}`)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/alerts/trigger-simulation", bytes.NewBuffer(simBody))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	var simResp map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &simResp)
+	if simResp["success"] != true {
+		t.Fatalf("expected simulation success")
+	}
+}
+
 

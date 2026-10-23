@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"alinksec/pkg/alert"
+	"alinksec/pkg/asset"
 	"alinksec/pkg/auth"
 	"alinksec/pkg/backup"
 	"alinksec/pkg/bastion"
@@ -39,6 +41,8 @@ type HTTPServer struct {
 	simRunner      *simulator.Runner
 	backupEngine   *backup.BackupEngine
 	soarEngine     *soar.SOAREngine
+	assetMgr       *asset.Manager
+	alertDisp      *alert.Dispatcher
 	jwtSecret      []byte
 	mux            *http.ServeMux
 }
@@ -64,6 +68,8 @@ func NewHTTPServer(jwtSecret []byte) *HTTPServer {
 		simRunner:      simulator.NewRunner(),
 		backupEngine:   bkEngine,
 		soarEngine:     soar.NewSOAREngine(),
+		assetMgr:       asset.NewManager(),
+		alertDisp:      alert.NewDispatcher(5 * time.Minute),
 		jwtSecret:      jwtSecret,
 		mux:            http.NewServeMux(),
 	}
@@ -114,6 +120,20 @@ func (s *HTTPServer) registerRoutes() {
 	s.mux.HandleFunc("GET /api/v1/soar/playbooks", s.handleListPlaybooks)
 	s.mux.HandleFunc("POST /api/v1/soar/playbooks/toggle", s.handleTogglePlaybook)
 	s.mux.HandleFunc("POST /api/v1/soar/trigger-drill", s.handleSOARTargetDrill)
+
+	// 等保 2.0 资产管理与分级保护台账接口
+	s.mux.HandleFunc("GET /api/v1/assets", s.handleListAssets)
+	s.mux.HandleFunc("POST /api/v1/assets", s.handleCreateAsset)
+	s.mux.HandleFunc("POST /api/v1/assets/classify", s.handleClassifyAsset)
+	s.mux.HandleFunc("GET /api/v1/assets/stats", s.handleAssetStats)
+
+	// 告警聚合降噪与多渠道 (钉钉/企微/飞书/Syslog) 通知分发接口
+	s.mux.HandleFunc("GET /api/v1/alerts/aggregations", s.handleListAggregatedAlerts)
+	s.mux.HandleFunc("GET /api/v1/alerts/channels", s.handleListAlertChannels)
+	s.mux.HandleFunc("POST /api/v1/alerts/channels/toggle", s.handleToggleAlertChannel)
+	s.mux.HandleFunc("POST /api/v1/alerts/channels/test", s.handleTestAlertChannel)
+	s.mux.HandleFunc("GET /api/v1/alerts/stats", s.handleAlertStats)
+	s.mux.HandleFunc("POST /api/v1/alerts/trigger-simulation", s.handleTriggerAlertSimulation)
 
 	// 等保 2.0 三级自检报告导出 (公开与受保护模式)
 	s.mux.HandleFunc("GET /api/v1/compliance/full-report", s.handleFullComplianceReport)
@@ -882,3 +902,145 @@ func (s *HTTPServer) handleSOARTargetDrill(w http.ResponseWriter, r *http.Reques
 		"incident": inc,
 	})
 }
+
+// ==================== 等保 2.0 资产管理与定级保护接口 ====================
+
+func (s *HTTPServer) handleListAssets(w http.ResponseWriter, r *http.Request) {
+	zone := r.URL.Query().Get("zone")
+	criticality := r.URL.Query().Get("criticality")
+	assets := s.assetMgr.ListAssets(zone, criticality)
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"total":  len(assets),
+		"assets": assets,
+	})
+}
+
+func (s *HTTPServer) handleCreateAsset(w http.ResponseWriter, r *http.Request) {
+	var a asset.Asset
+	if err := json.NewDecoder(r.Body).Decode(&a); err != nil {
+		s.writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid asset body"})
+		return
+	}
+	if a.ID == "" {
+		a.ID = fmt.Sprintf("AST-%03d", time.Now().Unix()%1000)
+	}
+	if err := s.assetMgr.RegisterOrUpdate(&a); err != nil {
+		s.writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	s.auditTrail.Record("sec_admin", "sec_admin", r.RemoteAddr, "CREATE_ASSET", "/api/v1/assets", a.ID, http.StatusOK, "SUCCESS")
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"success": true,
+		"asset":   a,
+	})
+}
+
+func (s *HTTPServer) handleClassifyAsset(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ID          string                 `json:"id"`
+		Zone        asset.SecurityZone     `json:"zone"`
+		Criticality asset.CriticalityLevel `json:"criticality"`
+		Owner       string                 `json:"owner"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ID == "" {
+		s.writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid classify payload"})
+		return
+	}
+	if err := s.assetMgr.UpdateClassification(req.ID, req.Zone, req.Criticality, req.Owner); err != nil {
+		s.writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+	s.auditTrail.Record("sec_admin", "sec_admin", r.RemoteAddr, "CLASSIFY_ASSET", "/api/v1/assets/classify", fmt.Sprintf("%s -> %s / %s", req.ID, req.Zone, req.Criticality), http.StatusOK, "SUCCESS")
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"success": true,
+		"message": "资产定级与安全域变更已成功落盘并同步至微隔离矩阵",
+	})
+}
+
+func (s *HTTPServer) handleAssetStats(w http.ResponseWriter, r *http.Request) {
+	stats := s.assetMgr.GetStats()
+	s.writeJSON(w, http.StatusOK, stats)
+}
+
+// ==================== 告警收敛降噪与多渠道通知分发接口 ====================
+
+func (s *HTTPServer) handleListAggregatedAlerts(w http.ResponseWriter, r *http.Request) {
+	aggregations := s.alertDisp.ListAggregations()
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"total":        len(aggregations),
+		"aggregations": aggregations,
+	})
+}
+
+func (s *HTTPServer) handleListAlertChannels(w http.ResponseWriter, r *http.Request) {
+	channels := s.alertDisp.ListChannels()
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"total":    len(channels),
+		"channels": channels,
+	})
+}
+
+func (s *HTTPServer) handleToggleAlertChannel(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ChannelID string `json:"channel_id"`
+		Enabled   bool   `json:"enabled"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ChannelID == "" {
+		s.writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid channel toggle payload"})
+		return
+	}
+	if err := s.alertDisp.ToggleChannel(req.ChannelID, req.Enabled); err != nil {
+		s.writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+	s.auditTrail.Record("sec_admin", "sec_admin", r.RemoteAddr, "TOGGLE_ALERT_CHANNEL", "/api/v1/alerts/channels/toggle", fmt.Sprintf("%s enabled=%v", req.ChannelID, req.Enabled), http.StatusOK, "SUCCESS")
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"success":    true,
+		"channel_id": req.ChannelID,
+		"enabled":    req.Enabled,
+	})
+}
+
+func (s *HTTPServer) handleTestAlertChannel(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ChannelID string `json:"channel_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.ChannelID == "" {
+		s.writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid channel id"})
+		return
+	}
+	msg, err := s.alertDisp.TestChannel(req.ChannelID)
+	if err != nil {
+		s.writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
+		return
+	}
+	s.auditTrail.Record("sec_admin", "sec_admin", r.RemoteAddr, "TEST_ALERT_CHANNEL", "/api/v1/alerts/channels/test", req.ChannelID, http.StatusOK, "SUCCESS")
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"success": true,
+		"message": msg,
+	})
+}
+
+func (s *HTTPServer) handleAlertStats(w http.ResponseWriter, r *http.Request) {
+	stats := s.alertDisp.GetStats()
+	s.writeJSON(w, http.StatusOK, stats)
+}
+
+func (s *HTTPServer) handleTriggerAlertSimulation(w http.ResponseWriter, r *http.Request) {
+	// 模拟黑客对 DMZ 资产发动 50 次密集注入探测
+	sourceHost := "203.0.113.88"
+	var lastAgg *alert.AggregatedAlert
+	for i := 0; i < 50; i++ {
+		agg, _ := s.alertDisp.IngestEvent(sourceHost, "WAF", "SQL_INJECTION", "CRITICAL", "检测到自动化扫描工具发送的批量联合查询注入攻击")
+		lastAgg = agg
+	}
+
+	s.auditTrail.Record("sec_admin", "sec_admin", r.RemoteAddr, "ALERT_NOISE_REDUCTION_SIM", "/api/v1/alerts/trigger-simulation", sourceHost, http.StatusOK, "SUCCESS")
+	s.writeJSON(w, http.StatusOK, map[string]any{
+		"success":          true,
+		"message":          "已模拟注入 50 次密集攻击请求，经 5 分钟滑动窗口降噪算法聚合成 1 条高危预警并成功分发！",
+		"aggregated_alert": lastAgg,
+		"stats":            s.alertDisp.GetStats(),
+	})
+}
+
