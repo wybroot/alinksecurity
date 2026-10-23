@@ -31,6 +31,7 @@ const (
 	AgentType_AGENT_FIREWALL AgentType = 3 // 云防火墙/微隔离
 	AgentType_AGENT_AUDIT    AgentType = 4 // 日志与数据库审计探针
 	AgentType_AGENT_TAMPER   AgentType = 5 // 网页防篡改探针
+	AgentType_AGENT_BASTION  AgentType = 6 // 4A 运维堡垒机/特权访问审计
 )
 
 // Enum value maps for AgentType.
@@ -42,6 +43,7 @@ var (
 		3: "AGENT_FIREWALL",
 		4: "AGENT_AUDIT",
 		5: "AGENT_TAMPER",
+		6: "AGENT_BASTION",
 	}
 	AgentType_value = map[string]int32{
 		"AGENT_UNKNOWN":  0,
@@ -50,6 +52,7 @@ var (
 		"AGENT_FIREWALL": 3,
 		"AGENT_AUDIT":    4,
 		"AGENT_TAMPER":   5,
+		"AGENT_BASTION":  6,
 	}
 )
 
@@ -1131,14 +1134,15 @@ const file_alinksec_hub_proto_rawDesc = "" +
 	"\bsrc_cidr\x18\x04 \x01(\tR\asrcCidr\x12\x19\n" +
 	"\bdst_cidr\x18\x05 \x01(\tR\adstCidr\x12\x19\n" +
 	"\bdst_port\x18\x06 \x01(\tR\adstPort\x12\x16\n" +
-	"\x06action\x18\a \x01(\tR\x06action*s\n" +
+	"\x06action\x18\a \x01(\tR\x06action*\x86\x01\n" +
 	"\tAgentType\x12\x11\n" +
 	"\rAGENT_UNKNOWN\x10\x00\x12\r\n" +
 	"\tAGENT_EDR\x10\x01\x12\r\n" +
 	"\tAGENT_WAF\x10\x02\x12\x12\n" +
 	"\x0eAGENT_FIREWALL\x10\x03\x12\x0f\n" +
 	"\vAGENT_AUDIT\x10\x04\x12\x10\n" +
-	"\fAGENT_TAMPER\x10\x05*a\n" +
+	"\fAGENT_TAMPER\x10\x05\x12\x11\n" +
+	"\rAGENT_BASTION\x10\x06*a\n" +
 	"\n" +
 	"EventLevel\x12\x0f\n" +
 	"\vLEVEL_DEBUG\x10\x00\x12\x0e\n" +

@@ -12,6 +12,7 @@ enum AgentType {
   AGENT_FIREWALL = 3;    // 云防火墙/微隔离
   AGENT_AUDIT = 4;       // 日志与数据库审计探针
   AGENT_TAMPER = 5;      // 网页防篡改探针
+  AGENT_BASTION = 6;     // 4A 运维堡垒机/特权访问审计
 }
 
 // 事件威胁等级

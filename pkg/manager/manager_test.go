@@ -182,3 +182,46 @@ func TestThreeRoleSeparationAndAudit(t *testing.T) {
 		t.Fatalf("dashboard html failed: %d", w.Code)
 	}
 }
+
+func TestBastionAndSimulationEndpoints(t *testing.T) {
+	server := NewHTTPServer([]byte("secret-key-for-test-32bytes-1234"))
+	handler := server.Router()
+
+	// 1. 获取 4A 会话列表
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/bastion/sessions", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("failed to get bastion sessions: %d", w.Code)
+	}
+
+	// 2. 测试高危指令评估 (rm -rf /)
+	evalPayload := []byte(`{"command":"rm -rf /"}`)
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/bastion/evaluate", bytes.NewBuffer(evalPayload))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("failed to evaluate bastion command: %d", w.Code)
+	}
+	var evalResp map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &evalResp)
+	if evalResp["allowed"] != false {
+		t.Fatalf("expected rm -rf / to be disallowed, got allowed")
+	}
+
+	// 3. 测试一键全栈红蓝对抗演练
+	req = httptest.NewRequest(http.MethodPost, "/api/v1/simulate/run", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("failed to run simulation: %d", w.Code)
+	}
+	var simReport map[string]any
+	_ = json.Unmarshal(w.Body.Bytes(), &simReport)
+	if simReport["overall_verdict"] != "PASS" {
+		t.Fatalf("expected simulation verdict PASS, got %v", simReport["overall_verdict"])
+	}
+	if simReport["successful_blocks"] != float64(8) {
+		t.Fatalf("expected 8 successful blocks, got %v", simReport["successful_blocks"])
+	}
+}

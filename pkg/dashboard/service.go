@@ -107,6 +107,11 @@ func (s *Service) seedDefaultAgents() {
 			Hostname: "sec-log-collector", Status: "ONLINE", CPUUsage: 0.5, MemoryMB: 14.8,
 			ActiveRules: 12, LastHeartbeat: now,
 		},
+		{
+			AgentID: "agent-bastion-01", AgentType: "BASTION", HostIP: "192.168.1.120",
+			Hostname: "bastion-4a-gateway", Status: "ONLINE", CPUUsage: 0.6, MemoryMB: 16.5,
+			ActiveRules: 7, LastHeartbeat: now,
+		},
 	}
 
 	for _, a := range defaults {
@@ -185,7 +190,7 @@ func (s *Service) GetOverview() OverviewData {
 		"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0,
 	}
 	componentThreats := map[string]int{
-		"WAF": 0, "EDR": 0, "DBAUDIT": 0, "CFW": 0, "TAMPER": 0, "LOGAUDIT": 0,
+		"WAF": 0, "EDR": 0, "DBAUDIT": 0, "CFW": 0, "TAMPER": 0, "LOGAUDIT": 0, "BASTION": 0,
 	}
 
 	blockedCount := 0

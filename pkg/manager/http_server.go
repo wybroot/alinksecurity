@@ -4,16 +4,19 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"time"
 
 	"alinksec/pkg/auth"
+	"alinksec/pkg/bastion"
 	"alinksec/pkg/compliance"
 	"alinksec/pkg/crypto"
 	"alinksec/pkg/dashboard"
 	"alinksec/pkg/logger"
+	"alinksec/pkg/simulator"
 	"os"
 )
 
@@ -28,6 +31,9 @@ type HTTPServer struct {
 	auditTrail     *AuditTrail
 	dashboardSvc   *dashboard.Service
 	evaluator      *compliance.Evaluator
+	bastionEngine  *bastion.Engine
+	bastionSM      *bastion.SessionManager
+	simRunner      *simulator.Runner
 	jwtSecret      []byte
 	mux            *http.ServeMux
 }
@@ -38,16 +44,23 @@ func NewHTTPServer(jwtSecret []byte) *HTTPServer {
 		jwtSecret = []byte("alinksec-default-jwt-secret-key-32b")
 	}
 
+	bEngine := bastion.NewEngine()
+	bSM := bastion.NewSessionManager()
+
 	s := &HTTPServer{
-		userStore:    NewUserStore(),
-		policyStore:  NewPolicyStore(),
-		auditTrail:   NewAuditTrail(),
-		dashboardSvc: dashboard.NewService(),
-		evaluator:    compliance.NewEvaluator(),
-		jwtSecret:    jwtSecret,
-		mux:          http.NewServeMux(),
+		userStore:      NewUserStore(),
+		policyStore:    NewPolicyStore(),
+		auditTrail:     NewAuditTrail(),
+		dashboardSvc:   dashboard.NewService(),
+		evaluator:      compliance.NewEvaluator(),
+		bastionEngine:  bEngine,
+		bastionSM:      bSM,
+		simRunner:      simulator.NewRunner(),
+		jwtSecret:      jwtSecret,
+		mux:            http.NewServeMux(),
 	}
 
+	s.seedDefaultBastionSessions()
 	s.registerRoutes()
 	return s
 }
@@ -73,6 +86,12 @@ func (s *HTTPServer) registerRoutes() {
 	s.mux.HandleFunc("GET /api/v1/system/agents", s.handleListAgents)
 	s.mux.HandleFunc("POST /api/v1/system/agents/sync", s.withAuth(s.handleSyncAgent, auth.PermPolicyWrite))
 	s.mux.HandleFunc("GET /api/v1/security/events", s.handleListSecurityEvents)
+
+	// 4A 运维特权审计与红蓝攻防实弹演练接口
+	s.mux.HandleFunc("GET /api/v1/bastion/sessions", s.handleBastionSessions)
+	s.mux.HandleFunc("GET /api/v1/bastion/rules", s.handleBastionRules)
+	s.mux.HandleFunc("POST /api/v1/bastion/evaluate", s.handleBastionEvaluate)
+	s.mux.HandleFunc("POST /api/v1/simulate/run", s.handleSimulateRun)
 
 	// 等保 2.0 三级自检报告导出 (公开与受保护模式)
 	s.mux.HandleFunc("GET /api/v1/compliance/full-report", s.handleFullComplianceReport)
@@ -555,6 +574,73 @@ func (s *HTTPServer) handleExportComplianceMarkdown(w http.ResponseWriter, r *ht
 	w.Header().Set("Content-Disposition", "attachment; filename=MLPS3_Compliance_Audit_Report.md")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(md))
+}
+
+func (s *HTTPServer) seedDefaultBastionSessions() {
+	sess1 := bastion.NewSession("SESS-20261024-001", "ops_super", "192.168.1.150", "192.168.20.15", "root", "SSH")
+	sess1.RecordCommand("pwd", s.bastionEngine.CheckCommand("pwd"))
+	sess1.RecordCommand("df -h", s.bastionEngine.CheckCommand("df -h"))
+	sess1.RecordCommand("cat /etc/shadow", s.bastionEngine.CheckCommand("cat /etc/shadow"))
+	sess1.RecordCommand("chmod -R 777 /", s.bastionEngine.CheckCommand("chmod -R 777 /"))
+	sess1.RecordCommand("systemctl status nginx", s.bastionEngine.CheckCommand("systemctl status nginx"))
+	s.bastionSM.AddSession(sess1)
+
+	sess2 := bastion.NewSession("SESS-20261024-002", "dev_ops02", "192.168.1.152", "192.168.30.50", "admin", "SSH")
+	sess2.RecordCommand("whoami", s.bastionEngine.CheckCommand("whoami"))
+	sess2.RecordCommand("rm -rf / --no-preserve-root", s.bastionEngine.CheckCommand("rm -rf / --no-preserve-root"))
+	sess2.RecordCommand("docker ps", s.bastionEngine.CheckCommand("docker ps"))
+	s.bastionSM.AddSession(sess2)
+}
+
+func (s *HTTPServer) handleBastionSessions(w http.ResponseWriter, r *http.Request) {
+	sessions := s.bastionSM.ListSessions()
+	s.writeJSON(w, http.StatusOK, sessions)
+}
+
+func (s *HTTPServer) handleBastionRules(w http.ResponseWriter, r *http.Request) {
+	rules := s.bastionEngine.GetRules()
+	s.writeJSON(w, http.StatusOK, rules)
+}
+
+type BastionEvalRequest struct {
+	Command string `json:"command"`
+}
+
+func (s *HTTPServer) handleBastionEvaluate(w http.ResponseWriter, r *http.Request) {
+	var req BastionEvalRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		s.writeJSON(w, http.StatusBadRequest, map[string]string{"error": "Invalid request payload"})
+		return
+	}
+	res := s.bastionEngine.CheckCommand(req.Command)
+	s.writeJSON(w, http.StatusOK, res)
+}
+
+func (s *HTTPServer) handleSimulateRun(w http.ResponseWriter, r *http.Request) {
+	report := s.simRunner.RunFullDrill()
+
+	for _, res := range report.Results {
+		sev := "HIGH"
+		if res.Scenario.ExpectedAction == "AUTO_HEALED" {
+			sev = "CRITICAL"
+		} else if strings.Contains(res.Scenario.Name, "注入") || strings.Contains(res.Scenario.Name, "反弹") || strings.Contains(res.Scenario.Name, "删除") {
+			sev = "CRITICAL"
+		}
+
+		s.dashboardSvc.RecordEvent(dashboard.ThreatEventSummary{
+			EventID:    fmt.Sprintf("EVT-DRILL-%s", res.Scenario.ID),
+			Timestamp:  time.Now(),
+			Component:  res.Scenario.TargetComponent,
+			ThreatType: res.Scenario.Name,
+			Severity:   sev,
+			SourceIP:   "10.0.99.100 (RedTeam-Sim)",
+			TargetHost: fmt.Sprintf("Cluster-%s", res.Scenario.TargetComponent),
+			Summary:    res.InterceptReason,
+			Action:     res.ActionTaken,
+		})
+	}
+
+	s.writeJSON(w, http.StatusOK, report)
 }
 
 func (s *HTTPServer) writeJSON(w http.ResponseWriter, code int, data any) {

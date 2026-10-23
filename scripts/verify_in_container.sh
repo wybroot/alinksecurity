@@ -39,8 +39,9 @@ go build -o /app/build_bin/alinksec-tamper ./cmd/agents/alinksec-tamper
 go build -o /app/build_bin/alinksec-dbaudit ./cmd/agents/alinksec-dbaudit
 go build -o /app/build_bin/alinksec-cfw ./cmd/agents/alinksec-cfw
 go build -o /app/build_bin/alinksec-log ./cmd/agents/alinksec-log
+go build -o /app/build_bin/alinksec-bastion ./cmd/agents/alinksec-bastion
 
-echo -e "${GREEN}✓ 8 大核心组件 Linux ELF 二进制全部编译成功:${NC}"
+echo -e "${GREEN}✓ 9 大核心组件与探针 Linux ELF 二进制全部编译成功:${NC}"
 ls -lh /app/build_bin
 
 echo -e "\n${BLUE}[STEP 3/5] 验证各独立安全探针的合规核心能力与规则引擎...${NC}"
@@ -113,6 +114,15 @@ if /app/build_bin/alinksec-waf -test-sqli 2>/dev/null || true; then
     echo -e "${GREEN}[PASS]${NC}"
 fi
 
+# G. 验证 4A 运维特权审计与高危指令拦截
+echo -n "  -> 8. 4A 堡垒机高危指令拦截 (rm -rf /) 与会话存证链: "
+/app/build_bin/alinksec-bastion -eval-session > /tmp/alinksec_test_data/bastion.json
+if grep -q "BLOCKED" /tmp/alinksec_test_data/bastion.json && grep -q "CERT-BASTION" /tmp/alinksec_test_data/bastion.json; then
+    echo -e "${GREEN}[PASS]${NC}"
+else
+    echo -e "${RED}[FAIL]${NC}" && exit 1
+fi
+
 echo -e "\n${BLUE}[STEP 4/5] 验证中央安全控制中枢与三权分立端到端联动...${NC}"
 /app/build_bin/alinksec-hub -addr 127.0.0.1:9090 > /dev/null 2>&1 &
 HUB_PID=$!
@@ -123,7 +133,7 @@ MGR_PID=$!
 sleep 1
 
 # 探针注册心跳联动验证
-echo -n "  -> 8. EDR 探针接入中枢注册与心跳通讯: "
+echo -n "  -> 9. EDR 探针接入中枢注册与心跳通讯: "
 /app/build_bin/alinksec-edr -id test-edr-node -hub 127.0.0.1:9090 > /dev/null 2>&1 &
 AGENT_PID=$!
 sleep 2
@@ -131,8 +141,17 @@ kill -9 $AGENT_PID 2>/dev/null || true
 echo -e "${GREEN}[PASS]${NC}"
 
 # 验证 态势感知大屏 API 与等保三级合规报表一键导出
-echo -n "  -> 9. 态势感知大屏 API 与等保合规报表导出: "
+echo -n "  -> 10. 态势感知大屏 API 与等保合规报表导出: "
 if wget -qO- http://127.0.0.1:8088/api/v1/dashboard/overview | grep -q "GB/T 22239-2019"; then
+    echo -e "${GREEN}[PASS]${NC}"
+else
+    echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
+fi
+
+# 验证 全自动化红蓝对抗攻防实弹演练闭环
+echo -n "  -> 11. 自动化红蓝对抗实弹攻防演练闭环 (100% 拦截自愈): "
+wget -qO- --post-data="" http://127.0.0.1:8088/api/v1/simulate/run > /tmp/alinksec_test_data/drill.json
+if grep -q "overall_verdict\": \"PASS\"" /tmp/alinksec_test_data/drill.json && grep -q "successful_blocks\": 8" /tmp/alinksec_test_data/drill.json; then
     echo -e "${GREEN}[PASS]${NC}"
 else
     echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1

@@ -412,6 +412,11 @@
     </div>
 
     <div class="header-actions">
+      <!-- 实弹攻防对抗演练 -->
+      <button class="btn btn-warning" id="btnDrill" onclick="triggerRedBlueDrill()">
+        <span>⚡ 实弹攻防演练</span>
+      </button>
+
       <!-- 模式切换：控制台 / 大屏看板 -->
       <button class="btn" id="btnToggleMode" onclick="toggleScreenMode()">
         <span id="screenModeIcon">🌌</span>
@@ -467,6 +472,10 @@
       <div class="nav-item" onclick="navigate('audit')" id="nav-audit">
         <div><span class="nav-icon">📋</span>不可篡改审计</div>
         <span class="nav-tag badge-success" id="auditRoleLock" style="display:none;">🔒 互斥</span>
+      </div>
+      <div class="nav-item" onclick="navigate('bastion')" id="nav-bastion">
+        <div><span class="nav-icon">💻</span>4A 运维特权审计</div>
+        <span class="nav-tag badge-info">会话链存证</span>
       </div>
       <div class="nav-item" onclick="navigate('compliance')" id="nav-compliance">
         <div><span class="nav-icon">🎖️</span>等保三级测评</div>
@@ -822,7 +831,147 @@
         </div>
       </section>
 
+      <!-- 视图 8: 4A 运维特权审计与终端演练 -->
+      <section id="view-bastion" style="display:none;">
+        <div class="page-header">
+          <div>
+            <h2 class="page-title">4A 运维安全审计与特权指令防护</h2>
+            <p class="page-subtitle">遵循 GB/T 22239-2019 8.1.4.3 / 8.1.4.4，对特权访问会话全程录制、高危指令动态拦截并实施区块链式 SHA-256 存证</p>
+          </div>
+          <button class="btn btn-primary" onclick="loadBastionData()">🔄 刷新 4A 会话</button>
+        </div>
+
+        <!-- 4A 概览指标卡 -->
+        <div class="stat-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 20px;">
+          <div class="stat-card">
+            <div class="stat-label">纳管 4A 活跃会话</div>
+            <div class="stat-value text-info" id="bastionTotalSessions">2</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">全流量代理与指令录制</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">累计高危指令拦截</div>
+            <div class="stat-value text-danger" id="bastionBlockedCmds">3</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">全盘删除/敏感文件窥探/提权</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">会话哈希链完整性</div>
+            <div class="stat-value text-success" id="bastionChainStatus">100% 通过</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">逐指令 SHA-256 链式防篡改</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">等保 2.0 (三级) 达标</div>
+            <div class="stat-value text-accent">合规达标 (优)</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">8.1.4.2 / 8.1.4.3 条款</div>
+          </div>
+        </div>
+
+        <!-- 4A 在线指令防护沙盒演练区 -->
+        <div class="card" style="margin-bottom: 20px; border-left: 4px solid var(--accent-color);">
+          <div style="font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <span>🛡️ 4A 高危指令动态拦截模拟沙箱</span>
+            <span style="font-size:12px; color:var(--text-muted);">实时测试高危命令过滤引擎</span>
+          </div>
+          <div style="display:flex; gap:10px; margin-bottom:12px;">
+            <input type="text" id="bastionTestCmd" class="form-control" style="font-family:monospace;" placeholder="输入测试指令，例如: rm -rf / 或 cat /etc/shadow 或 ls -la /var/log" value="rm -rf / --no-preserve-root">
+            <button class="btn btn-danger" onclick="testBastionCommand()" style="white-space:nowrap;">⚡ 拦截检测</button>
+          </div>
+          <div id="bastionEvalResultBox" style="display:none; padding:12px; border-radius:6px; background:rgba(0,0,0,0.3); font-family:monospace; font-size:13px;">
+          </div>
+        </div>
+
+        <!-- 4A 会话审计记录表 -->
+        <div class="card" style="margin-bottom: 20px;">
+          <div style="font-weight:700; margin-bottom:12px;">📋 运维特权审计会话存证链 (区块链式哈希)</div>
+          <table>
+            <thead>
+              <tr>
+                <th>会话 ID</th>
+                <th>运维人员</th>
+                <th>客户端来源</th>
+                <th>目标主机</th>
+                <th>协议</th>
+                <th>指令总数</th>
+                <th>高危拦截</th>
+                <th>存证哈希摘要</th>
+                <th>会话状态</th>
+              </tr>
+            </thead>
+            <tbody id="bastionSessionTableBody">
+              <!-- 动态填充 -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 4A 高危指令防御规则库 -->
+        <div class="card">
+          <div style="font-weight:700; margin-bottom:12px;">🔒 4A 堡垒机高危指令拦截规则库 (GB/T 22239-2019)</div>
+          <table>
+            <thead>
+              <tr>
+                <th>规则编号</th>
+                <th>规则名称</th>
+                <th>风险等级</th>
+                <th>处置动作</th>
+                <th>防御描述</th>
+                <th>等保三级对应条款</th>
+              </tr>
+            </thead>
+            <tbody id="bastionRulesTableBody">
+              <!-- 动态填充 -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
     </main>
+  </div>
+
+  <!-- 实弹攻防演练模态弹窗 -->
+  <div class="modal-overlay" id="drillModal">
+    <div class="modal" style="max-width: 850px;">
+      <div class="modal-header">
+        <div style="font-weight:700; display:flex; align-items:center; gap:8px;">
+          <span>⚡ AlinkSec 全栈多层防御矩阵自动化实弹攻防演练报告</span>
+          <span class="badge badge-success" id="drillBadge">100% 拦截自愈</span>
+        </div>
+        <button class="btn" onclick="closeModal('drillModal')">✕</button>
+      </div>
+      <div class="modal-body" style="max-height:70vh; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--bg-card); border-radius:6px; margin-bottom:15px; border:1px solid var(--border-color);">
+          <div>
+            <div style="font-size:12px; color:var(--text-muted);">演练批次编号 / 时间</div>
+            <div style="font-family:monospace; font-size:13px; font-weight:700;" id="drillBatchID">DRILL-INIT</div>
+          </div>
+          <div>
+            <div style="font-size:12px; color:var(--text-muted);">场景总数 / 成功阻断</div>
+            <div style="font-family:monospace; font-size:13px; font-weight:700; color:var(--success-color);" id="drillStats">8 / 8 (100.0%)</div>
+          </div>
+          <div>
+            <div style="font-size:12px; color:var(--text-muted);">电子存证数字哈希 (SHA-256)</div>
+            <div style="font-family:monospace; font-size:11px; color:var(--accent-color);" id="drillHash">-</div>
+          </div>
+        </div>
+
+        <table style="width:100%;">
+          <thead>
+            <tr>
+              <th>场景编号</th>
+              <th>演练场景</th>
+              <th>目标组件</th>
+              <th>注入 Payload</th>
+              <th>防御动作</th>
+              <th>处置详情与耗时</th>
+            </tr>
+          </thead>
+          <tbody id="drillTableBody">
+            <!-- 动态填充 -->
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('drillModal')">完成演练并查看大屏流</button>
+      </div>
+    </div>
   </div>
 
   <!-- 新建模态弹窗：创建管理员 -->
@@ -951,7 +1100,7 @@
       if (activeNavEl) activeNavEl.classList.add('active');
 
       // 隐藏所有视图
-      const views = ['dashboard', 'agents', 'policies', 'threats', 'audit', 'compliance', 'users'];
+      const views = ['dashboard', 'agents', 'policies', 'threats', 'audit', 'bastion', 'compliance', 'users'];
       views.forEach(v => {
         const el = document.getElementById(`view-${v}`);
         if (el) el.style.display = (v === viewName) ? 'block' : 'none';
@@ -965,6 +1114,7 @@
       if (viewName === 'agents') loadAgentAssets();
       if (viewName === 'threats') loadSecurityEvents();
       if (viewName === 'audit' && state.currentRole === 'audit_admin') loadAuditLogs();
+      if (viewName === 'bastion') loadBastionData();
       if (viewName === 'compliance') loadComplianceReport();
       if (viewName === 'users' && state.currentRole === 'sys_admin') loadUsersList();
     }
@@ -1200,6 +1350,149 @@
         }
       } catch (err) {
         console.error(err);
+      }
+    }
+
+    // 4A 运维特权审计数据加载
+    async function loadBastionData() {
+      try {
+        const [sessResp, rulesResp] = await Promise.all([
+          fetch('/api/v1/bastion/sessions'),
+          fetch('/api/v1/bastion/rules')
+        ]);
+        const sessions = await sessResp.json();
+        const rules = await rulesResp.json();
+
+        // 渲染会话指标
+        let totalCmds = 0;
+        let blockedCmds = 0;
+        sessions.forEach(s => {
+          totalCmds += (s.total_commands || 0);
+          blockedCmds += (s.blocked_commands || 0);
+        });
+        document.getElementById('bastionTotalSessions').innerText = sessions.length;
+        document.getElementById('bastionBlockedCmds').innerText = blockedCmds;
+
+        // 渲染会话表格
+        const tbody = document.getElementById('bastionSessionTableBody');
+        tbody.innerHTML = '';
+        sessions.forEach(s => {
+          const tr = document.createElement('tr');
+          const hashShort = (s.last_hash || '').substring(0, 16) + '...';
+          tr.innerHTML = `
+            <td style="font-family:monospace; font-weight:700;">${s.session_id}</td>
+            <td><strong>${s.username}</strong></td>
+            <td style="font-family:monospace;">${s.client_ip}</td>
+            <td style="font-family:monospace;">${s.target_host}</td>
+            <td><span class="badge badge-info">${s.protocol || 'SSH'}</span></td>
+            <td>${s.total_commands} 条</td>
+            <td><span class="badge ${s.blocked_commands > 0 ? 'badge-danger' : 'badge-success'}">${s.blocked_commands} 拦截</span></td>
+            <td style="font-family:monospace; font-size:11px; color:var(--accent-color);">${hashShort}</td>
+            <td><span class="badge badge-success">${s.status}</span></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // 渲染规则库
+        const rulesTbody = document.getElementById('bastionRulesTableBody');
+        rulesTbody.innerHTML = '';
+        rules.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td style="font-family:monospace; font-weight:700;">${r.rule_id}</td>
+            <td><strong>${r.name}</strong></td>
+            <td><span class="badge ${r.risk_level === 'CRITICAL' ? 'badge-danger' : 'badge-warning'}">${r.risk_level}</span></td>
+            <td><span class="badge badge-danger">${r.action}</span></td>
+            <td style="font-size:12px; color:var(--text-muted);">${r.description}</td>
+            <td style="font-size:12px; color:var(--accent-color);">${r.mlps_clause}</td>
+          `;
+          rulesTbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Failed to load bastion data:', err);
+      }
+    }
+
+    // 测试 4A 指令动态拦截
+    async function testBastionCommand() {
+      const cmd = document.getElementById('bastionTestCmd').value.trim();
+      if (!cmd) return;
+
+      const box = document.getElementById('bastionEvalResultBox');
+      box.style.display = 'block';
+      box.innerHTML = `<span style="color:var(--text-muted);">正在提交 4A 指令检测引擎分析...</span>`;
+
+      try {
+        const resp = await fetch('/api/v1/bastion/evaluate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: cmd })
+        });
+        const res = await resp.json();
+
+        if (res.allowed) {
+          box.innerHTML = `
+            <div style="color:var(--success-color); font-weight:700;">✅ 指令安全核验通过 (ALLOWED)</div>
+            <div style="margin-top:4px; color:var(--text-muted); font-size:12px;">判定: 属于日常合规运维指令，已记录至 SHA-256 审计存证链。</div>
+          `;
+        } else {
+          box.innerHTML = `
+            <div style="color:var(--danger-color); font-weight:700;">🛑 [4A高危指令强行阻断] (BLOCKED)</div>
+            <div style="margin-top:4px; color:#ffb7b7; font-size:12px;">原因: ${res.reason}</div>
+            <div style="margin-top:4px; color:var(--text-muted); font-size:11px;">等级: <span class="badge badge-danger">${res.risk_level}</span> | 处置: <span class="badge badge-danger">${res.action}</span> | 条款: ${res.matched_rule?.mlps_clause || '等保三级访问控制'}</div>
+          `;
+        }
+      } catch (err) {
+        box.innerHTML = `<span style="color:var(--danger-color);">检测失败: ${err.message}</span>`;
+      }
+    }
+
+    // 触发全栈红蓝对抗自动化实弹攻防演练
+    async function triggerRedBlueDrill() {
+      const btn = document.getElementById('btnDrill');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span>⏳ 演练推进中...</span>';
+      btn.disabled = true;
+
+      try {
+        const resp = await fetch('/api/v1/simulate/run', { method: 'POST' });
+        const report = await resp.json();
+
+        // 渲染弹窗数据
+        document.getElementById('drillBatchID').innerText = `${report.drill_id} (${report.executed_at})`;
+        document.getElementById('drillStats').innerText = `${report.successful_blocks} / ${report.total_scenarios} (${report.interception_rate.toFixed(1)}%)`;
+        document.getElementById('drillHash').innerText = report.report_hash;
+
+        const tbody = document.getElementById('drillTableBody');
+        tbody.innerHTML = '';
+        report.results.forEach(item => {
+          const tr = document.createElement('tr');
+          const isHealed = item.action_taken === 'AUTO_HEALED';
+          const badgeClass = isHealed ? 'badge-info' : (item.success ? 'badge-success' : 'badge-danger');
+          const actionText = isHealed ? '瞬间自愈还原' : (item.success ? '成功强行阻断' : '放行(失效)');
+
+          tr.innerHTML = `
+            <td style="font-family:monospace; font-weight:700;">${item.scenario.id}</td>
+            <td><strong>${item.scenario.name}</strong></td>
+            <td><span class="badge badge-info">${item.scenario.target_component}</span></td>
+            <td style="font-family:monospace; font-size:11px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.scenario.attack_payload}">${item.scenario.attack_payload}</td>
+            <td><span class="badge ${badgeClass}">${actionText}</span></td>
+            <td style="font-size:12px;"><span style="color:var(--text-muted);">${item.intercept_reason}</span> <strong style="color:var(--accent-color);">(${item.duration_ms}ms)</strong></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        openModal('drillModal');
+        showToast('⚡ 红蓝攻防实弹演练完成！威胁事件已同步至全景大屏');
+        
+        // 自动刷新态势大屏与威胁流
+        loadOverviewData();
+        loadSecurityEvents();
+      } catch (err) {
+        alert('演练启动失败: ' + err.message);
+      } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
       }
     }
 

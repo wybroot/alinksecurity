@@ -119,6 +119,21 @@ func NewPolicyStore() *PolicyStore {
 		UpdatedBy: "secadmin",
 	}
 
+	ps.policies["BASTION"] = &SecurityPolicyPackage{
+		Version:   "v1.0.0",
+		AgentType: "BASTION",
+		ProcessRules: []*pb.ProcessRule{
+			{RuleId: "cmd-rm-rf", ProcessName: "BLOCK_ROOT_RECURSIVE_DELETE", BlockIfMismatch: true},
+			{RuleId: "cmd-chmod-777", ProcessName: "BLOCK_ROOT_PRIVILEGE_777", BlockIfMismatch: true},
+			{RuleId: "cmd-disk-wipe", ProcessName: "BLOCK_MKFS_RAW_DISK_FORMAT", BlockIfMismatch: true},
+			{RuleId: "cmd-cat-shadow", ProcessName: "BLOCK_READ_ETC_SHADOW", BlockIfMismatch: true},
+			{RuleId: "cmd-useradd-0", ProcessName: "BLOCK_CREATE_UID0_BACKDOOR", BlockIfMismatch: true},
+		},
+		Signature: crypto.SHA256String("policy-bastion-v1.0.0"),
+		UpdatedAt: time.Now(),
+		UpdatedBy: "secadmin",
+	}
+
 	return ps
 }
 
