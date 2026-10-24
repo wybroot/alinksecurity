@@ -13,6 +13,7 @@ import (
 	"alinksec/pkg/config"
 	"alinksec/pkg/logger"
 	"alinksec/pkg/manager"
+	"alinksec/pkg/storage"
 )
 
 func main() {
@@ -42,7 +43,26 @@ func main() {
 		secret = []byte(cfg.JWTSecret)
 	}
 
-	server := manager.NewHTTPServer(secret)
+	// 初始化生产级存储引擎 (PostgreSQL 或高可用内存降级)
+	var store storage.StorageEngine
+	if cfg.Storage == "postgres" && cfg.PostgresDSN != "" {
+		pgStore, err := storage.NewPostgresStorage(cfg.PostgresDSN)
+		if err != nil {
+			logger.Warn("Failed to connect to PostgreSQL, falling back to in-memory store", "err", err)
+			store = storage.NewMemoryStorage()
+		} else {
+			logger.Info("Connected to PostgreSQL storage engine successfully")
+			store = pgStore
+		}
+	} else {
+		logger.Info("Using high-performance in-memory storage engine")
+		store = storage.NewMemoryStorage()
+	}
+
+	// 初始化 ClickHouse 管道
+	chWriter := storage.NewClickHouseWriter(cfg.ClickHouseURL, "alinksec", 200, 1*time.Second)
+
+	server := manager.NewProductionHTTPServer(secret, store, chWriter)
 
 	httpServer := &http.Server{
 		Addr:         addr,

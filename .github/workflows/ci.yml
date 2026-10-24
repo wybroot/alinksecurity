@@ -60,6 +60,8 @@ jobs:
           go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-cfw ./cmd/agents/alinksec-cfw
           go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-log ./cmd/agents/alinksec-log
           go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-bastion ./cmd/agents/alinksec-bastion
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-certgen ./cmd/alinksec-certgen
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/target-webapp ./deploy/target-app
           ls -lh dist/linux_${{ matrix.arch }}
 
   container-e2e:

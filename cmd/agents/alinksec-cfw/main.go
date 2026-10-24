@@ -22,6 +22,11 @@ func main() {
 	evalDst := flag.String("eval-dst", "", "Evaluate packet dst IP (e.g. 10.0.3.50)")
 	evalPort := flag.Int("eval-port", 3306, "Evaluate packet dst port")
 	evalProto := flag.String("eval-proto", "TCP", "Evaluate packet protocol")
+	tlsEnabled := flag.Bool("tls", false, "Enable mTLS connection to hub")
+	tlsCert := flag.String("tls-cert", "", "mTLS client certificate path")
+	tlsKey := flag.String("tls-key", "", "mTLS client private key path")
+	tlsCA := flag.String("tls-ca", "", "mTLS CA certificate path")
+	serverName := flag.String("server-name", "alinksec-hub", "mTLS server name")
 
 	flag.Parse()
 
@@ -38,6 +43,11 @@ func main() {
 		HubAddr:      *hubAddr,
 		HeartbeatSec: 5 * time.Second,
 		Standalone:   *standalone,
+		TLSEnabled:   *tlsEnabled,
+		TLSCert:      *tlsCert,
+		TLSKey:       *tlsKey,
+		TLSCA:        *tlsCA,
+		ServerName:   *serverName,
 	}
 
 	agent := cfw.NewCFWAgent(cfg)

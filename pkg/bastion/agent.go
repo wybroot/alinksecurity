@@ -8,10 +8,10 @@ import (
 
 	pb "alinksec/api/proto/v1"
 	"alinksec/pkg/crypto"
+	"alinksec/pkg/crypto/tlsutil"
 	"alinksec/pkg/logger"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // AgentConfig 堡垒机探针配置
@@ -21,6 +21,11 @@ type AgentConfig struct {
 	ListenAddress string `json:"listen_address"`
 	Hostname      string `json:"hostname"`
 	LocalIP       string `json:"local_ip"`
+	TLSEnabled    bool   `json:"tls_enabled"`
+	TLSCert       string `json:"tls_cert"`
+	TLSKey        string `json:"tls_key"`
+	TLSCA         string `json:"tls_ca"`
+	ServerName    string `json:"server_name"`
 }
 
 // BastionAgent 4A 运维特权审计微服务探针
@@ -151,15 +156,15 @@ func (a *BastionAgent) buildSecurityEvent(s *Session, cmd string, res *CommandCh
 }
 
 func (a *BastionAgent) connectHub() error {
-	conn, err := grpc.Dial(a.cfg.HubAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	conn, err := tlsutil.DialHub(ctx, a.cfg.HubAddress, a.cfg.TLSEnabled, a.cfg.TLSCert, a.cfg.TLSKey, a.cfg.TLSCA, a.cfg.ServerName)
 	if err != nil {
 		return err
 	}
 	a.grpcConn = conn
 	a.client = pb.NewAlinkSecHubServiceClient(conn)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	regResp, err := a.client.RegisterAgent(ctx, &pb.RegisterRequest{
 		AgentId:   a.cfg.AgentID,

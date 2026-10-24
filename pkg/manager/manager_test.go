@@ -2,6 +2,7 @@ package manager
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 
 	pb "alinksec/api/proto/v1"
 	"alinksec/pkg/auth"
+	"alinksec/pkg/storage"
 )
 
 func TestThreeRoleSeparationAndAudit(t *testing.T) {
@@ -397,5 +399,71 @@ func TestAssetAndAlertEndpoints(t *testing.T) {
 	_ = json.Unmarshal(w.Body.Bytes(), &simResp)
 	if simResp["success"] != true {
 		t.Fatalf("expected simulation success")
+	}
+}
+
+func TestProductionManagerDatabaseOverlay(t *testing.T) {
+	jwtSecret := []byte("test-jwt-secret-key-for-manager-test")
+	memStore := storage.NewMemoryStorage()
+
+	// 向持久化数据库中写入一个真实探针
+	now := time.Now()
+	err := memStore.SaveAgent(context.Background(), &storage.AgentRecord{
+		AgentID:           "waf-node-prod-01",
+		AgentType:         pb.AgentType_AGENT_WAF,
+		AgentTypeStr:      "AGENT_WAF",
+		Version:           "v1.5.0",
+		Hostname:          "prod-edge-waf",
+		IP:                "192.168.10.25",
+		Status:            "online",
+		CPUUsage:          12.5,
+		MemoryUsedBytes:   256 * 1024 * 1024,
+		ActiveRulesCount:  68,
+		LastHeartbeatTime: now,
+		CreatedAt:         now,
+		UpdatedAt:         now,
+	})
+	if err != nil {
+		t.Fatalf("failed to save agent: %v", err)
+	}
+
+	srv := NewProductionHTTPServer(jwtSecret, memStore, nil)
+	handler := srv.Router()
+
+	// 验证 GET /api/v1/system/agents 直接从真实数据库返回探针列表
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/system/agents", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	var agents []map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &agents); err != nil {
+		t.Fatalf("unmarshal agents failed: %v", err)
+	}
+	if len(agents) != 1 {
+		t.Fatalf("expected 1 real agent from db, got %d", len(agents))
+	}
+	if agents[0]["agent_id"] != "waf-node-prod-01" {
+		t.Fatalf("expected agent_id 'waf-node-prod-01', got %v", agents[0]["agent_id"])
+	}
+
+	// 验证 GET /api/v1/dashboard/overview 正确统计真实数据库探针总数与在线数
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/dashboard/overview", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+	var overview map[string]any
+	if err := json.Unmarshal(w.Body.Bytes(), &overview); err != nil {
+		t.Fatalf("unmarshal overview failed: %v", err)
+	}
+	if int(overview["total_agents"].(float64)) != 1 {
+		t.Fatalf("expected total_agents 1, got %v", overview["total_agents"])
+	}
+	if int(overview["online_agents"].(float64)) != 1 {
+		t.Fatalf("expected online_agents 1, got %v", overview["online_agents"])
 	}
 }

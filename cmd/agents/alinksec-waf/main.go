@@ -20,6 +20,11 @@ func main() {
 		agentID     = flag.String("agent-id", "waf-node-01", "WAF Agent unique ID")
 		hubAddr     = flag.String("hub", "", "AlinkSec Hub gRPC address (e.g. 127.0.0.1:50051, optional)")
 		ccLimit     = flag.Int("cc-limit", 100, "Max requests per IP within 10s window (anti-CC)")
+		tlsEnabled  = flag.Bool("tls", false, "Enable mTLS connection to hub")
+		tlsCert     = flag.String("tls-cert", "", "mTLS client certificate path")
+		tlsKey      = flag.String("tls-key", "", "mTLS client private key path")
+		tlsCA       = flag.String("tls-ca", "", "mTLS CA certificate path")
+		serverName  = flag.String("server-name", "alinksec-hub", "mTLS server name")
 	)
 	flag.Parse()
 
@@ -34,6 +39,11 @@ func main() {
 		AgentID:     *agentID,
 		HubAddr:     *hubAddr,
 		MaxCCLimit:  *ccLimit,
+		TLSEnabled:  *tlsEnabled,
+		TLSCert:     *tlsCert,
+		TLSKey:      *tlsKey,
+		TLSCA:       *tlsCA,
+		ServerName:  *serverName,
 	}
 
 	agent, err := waf.NewAgent(cfg)

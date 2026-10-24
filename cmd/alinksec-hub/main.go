@@ -11,6 +11,7 @@ import (
 
 	pb "alinksec/api/proto/v1"
 	"alinksec/pkg/config"
+	"alinksec/pkg/crypto/tlsutil"
 	"alinksec/pkg/eventbus"
 	"alinksec/pkg/hub"
 	"alinksec/pkg/logger"
@@ -31,6 +32,7 @@ func main() {
 	logger.Info("Starting AlinkSec Hub Control Center (南向安全中枢)",
 		"grpc_port", cfg.GRPCPort,
 		"storage", cfg.Storage,
+		"tls_enabled", cfg.TLSEnabled,
 	)
 
 	addr := fmt.Sprintf(":%d", cfg.GRPCPort)
@@ -40,7 +42,34 @@ func main() {
 		os.Exit(1)
 	}
 
-	grpcServer := grpc.NewServer()
+	var grpcOpts []grpc.ServerOption
+	if cfg.TLSEnabled {
+		serverCertPEM, err := os.ReadFile(cfg.TLSCert)
+		if err != nil {
+			logger.Error("Failed to read server cert", "path", cfg.TLSCert, "err", err)
+			os.Exit(1)
+		}
+		serverKeyPEM, err := os.ReadFile(cfg.TLSKey)
+		if err != nil {
+			logger.Error("Failed to read server key", "path", cfg.TLSKey, "err", err)
+			os.Exit(1)
+		}
+		caCertPEM, err := os.ReadFile(cfg.TLSCA)
+		if err != nil {
+			logger.Error("Failed to read CA cert", "path", cfg.TLSCA, "err", err)
+			os.Exit(1)
+		}
+
+		creds, err := tlsutil.LoadServerMTLSCredentials(serverCertPEM, serverKeyPEM, caCertPEM)
+		if err != nil {
+			logger.Error("Failed to initialize server mTLS credentials", "err", err)
+			os.Exit(1)
+		}
+		grpcOpts = append(grpcOpts, grpc.Creds(creds))
+		logger.Info("gRPC mTLS enabled with mutual certificate verification (等保 8.1.3.1)")
+	}
+
+	grpcServer := grpc.NewServer(grpcOpts...)
 
 	// 初始化生产级存储引擎
 	var store storage.StorageEngine

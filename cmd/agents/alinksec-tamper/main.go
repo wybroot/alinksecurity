@@ -22,6 +22,11 @@ func main() {
 		hubAddr    = flag.String("hub", "", "AlinkSec Hub gRPC address (e.g. 127.0.0.1:50051, optional)")
 		standalone = flag.Bool("standalone", false, "Run in standalone offline mode")
 		autoRevert = flag.Bool("auto-revert", true, "Enable millisecond auto-reversion of tampered files")
+		tlsEnabled = flag.Bool("tls", false, "Enable mTLS connection to hub")
+		tlsCert    = flag.String("tls-cert", "", "mTLS client certificate path")
+		tlsKey     = flag.String("tls-key", "", "mTLS client private key path")
+		tlsCA      = flag.String("tls-ca", "", "mTLS CA certificate path")
+		serverName = flag.String("server-name", "alinksec-hub", "mTLS server name")
 	)
 	flag.Parse()
 
@@ -56,6 +61,11 @@ func main() {
 		BackupDir:  *backupDir,
 		HubAddr:    *hubAddr,
 		AutoRevert: *autoRevert,
+		TLSEnabled: *tlsEnabled,
+		TLSCert:    *tlsCert,
+		TLSKey:     *tlsKey,
+		TLSCA:      *tlsCA,
+		ServerName: *serverName,
 	}
 
 	agent, err := tamper.NewAgent(cfg)

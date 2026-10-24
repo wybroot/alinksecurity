@@ -35,7 +35,9 @@ RUN mkdir -p /app/build_bin && \
     go build -o /app/build_bin/alinksec-dbaudit ./cmd/agents/alinksec-dbaudit && \
     go build -o /app/build_bin/alinksec-cfw ./cmd/agents/alinksec-cfw && \
     go build -o /app/build_bin/alinksec-log ./cmd/agents/alinksec-log && \
-    go build -o /app/build_bin/alinksec-bastion ./cmd/agents/alinksec-bastion
+    go build -o /app/build_bin/alinksec-bastion ./cmd/agents/alinksec-bastion && \
+    go build -o /app/build_bin/alinksec-certgen ./cmd/alinksec-certgen && \
+    go build -o /app/build_bin/target-webapp ./deploy/target-app
 
 # 默认运行容器内端到端全量验证
 CMD ["/bin/sh", "scripts/verify_in_container.sh"]

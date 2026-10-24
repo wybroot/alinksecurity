@@ -8,9 +8,9 @@ import (
 
 	pb "alinksec/api/proto/v1"
 	"alinksec/pkg/crypto"
+	"alinksec/pkg/crypto/tlsutil"
 	"alinksec/pkg/logger"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Config EDR 探针配置
@@ -19,6 +19,11 @@ type Config struct {
 	HubAddr           string        `json:"hub_addr"`           // 安全管理中心 gRPC 地址 (留空则单机独立运行)
 	HeartbeatInterval time.Duration `json:"heartbeat_interval"` // 心跳间隔 (默认 10s)
 	BaselineInterval  time.Duration `json:"baseline_interval"`  // 基线巡检周期 (默认 30m)
+	TLSEnabled        bool          `json:"tls_enabled"`
+	TLSCert           string        `json:"tls_cert"`
+	TLSKey            string        `json:"tls_key"`
+	TLSCA             string        `json:"tls_ca"`
+	ServerName        string        `json:"server_name"`
 }
 
 // Agent 主机安全 EDR 探针实例
@@ -220,7 +225,7 @@ func (a *Agent) reportThreat(result DetectionResult) {
 }
 
 func (a *Agent) connectHub(ctx context.Context) error {
-	conn, err := grpc.DialContext(ctx, a.cfg.HubAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := tlsutil.DialHub(ctx, a.cfg.HubAddr, a.cfg.TLSEnabled, a.cfg.TLSCert, a.cfg.TLSKey, a.cfg.TLSCA, a.cfg.ServerName)
 	if err != nil {
 		return err
 	}

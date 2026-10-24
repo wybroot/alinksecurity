@@ -20,6 +20,11 @@ func main() {
 	standalone := flag.Bool("standalone", false, "Run in standalone mode without connecting to Hub")
 	evalCmd := flag.String("eval-cmd", "", "Evaluate a command against 4A rules and exit")
 	evalSession := flag.Bool("eval-session", false, "Run full mock session and export tamper-proof certificate")
+	tlsEnabled := flag.Bool("tls", false, "Enable mTLS connection to hub")
+	tlsCert := flag.String("tls-cert", "", "mTLS client certificate path")
+	tlsKey := flag.String("tls-key", "", "mTLS client private key path")
+	tlsCA := flag.String("tls-ca", "", "mTLS CA certificate path")
+	serverName := flag.String("server-name", "alinksec-hub", "mTLS server name")
 
 	flag.Parse()
 
@@ -41,6 +46,11 @@ func main() {
 		ListenAddress: "0.0.0.0:2222",
 		Hostname:      hostname,
 		LocalIP:       "127.0.0.1",
+		TLSEnabled:    *tlsEnabled,
+		TLSCert:       *tlsCert,
+		TLSKey:        *tlsKey,
+		TLSCA:         *tlsCA,
+		ServerName:    *serverName,
 	}
 
 	agent := bastion.NewBastionAgent(cfg)

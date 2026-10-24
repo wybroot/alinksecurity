@@ -222,6 +222,71 @@ func (cw *ClickHouseWriter) flushAudits(batch []*AdminAuditRecord) error {
 	return nil
 }
 
+// QueryRecentEvents 从 ClickHouse 查询最近的安全事件
+func (cw *ClickHouseWriter) QueryRecentEvents(limit int) ([]*SecurityEventRecord, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	query := fmt.Sprintf("SELECT * FROM %s.security_events ORDER BY event_time DESC LIMIT %d FORMAT JSONEachRow", cw.database, limit)
+	endpoint := fmt.Sprintf("%s/?query=%s", cw.endpoint, url.QueryEscape(query))
+
+	req, err := http.NewRequestWithContext(cw.ctx, "GET", endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := cw.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("clickhouse query error %d: %s", resp.StatusCode, string(body))
+	}
+
+	var events []*SecurityEventRecord
+	dec := json.NewDecoder(resp.Body)
+	for dec.More() {
+		var item SecurityEventRecord
+		if err := dec.Decode(&item); err == nil {
+			events = append(events, &item)
+		}
+	}
+	return events, nil
+}
+
+// QueryEventCount 查询 ClickHouse 安全事件总量
+func (cw *ClickHouseWriter) QueryEventCount() (int64, error) {
+	query := fmt.Sprintf("SELECT count() FROM %s.security_events", cw.database)
+	endpoint := fmt.Sprintf("%s/?query=%s", cw.endpoint, url.QueryEscape(query))
+
+	req, err := http.NewRequestWithContext(cw.ctx, "GET", endpoint, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	resp, err := cw.httpClient.Do(req)
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		return 0, fmt.Errorf("clickhouse query count error %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return 0, err
+	}
+
+	var count int64
+	_, _ = fmt.Sscanf(string(bytes.TrimSpace(body)), "%d", &count)
+	return count, nil
+}
+
 // Close 安全平滑退出 ClickHouse 写入管道
 func (cw *ClickHouseWriter) Close() error {
 	cw.cancel()
