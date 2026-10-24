@@ -1,0 +1,17 @@
+# ==============================================================================
+# AlinkSec LogAudit 180天合规存证生产级配置
+# ==============================================================================
+agent_id: "logaudit-prod-node-01"
+hub_addr: "alinksec-hub:50051"
+batch_size: 100
+flush_interval: "2s"
+tail_files:
+  - path: "/var/log/syslog"
+    source: "SYSTEM_SYSLOG"
+  - path: "/var/log/auth.log"
+    source: "SYSTEM_AUTH"
+  - path: "/var/log/nginx/access.log"
+    source: "APP_NGINX"
+retention_days: 180
+logging:
+  level: "info"

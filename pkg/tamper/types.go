@@ -44,4 +44,9 @@ type Config struct {
 	ProtectedExts   []string `json:"protected_exts"`   // 重点受保护扩展名 (如 .html, .jsp, .php, .js, .css)
 	AutoRevert      bool     `json:"auto_revert"`      // 是否开启毫秒级自愈恢复 (默认 true)
 	MaintenanceMode bool     `json:"maintenance_mode"` // 是否处于白名单维护发布模式
+	TLSEnabled      bool     `json:"tls_enabled"`
+	TLSCert         string   `json:"tls_cert"`
+	TLSKey          string   `json:"tls_key"`
+	TLSCA           string   `json:"tls_ca"`
+	ServerName      string   `json:"server_name"`
 }

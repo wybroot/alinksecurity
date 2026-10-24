@@ -16,9 +16,15 @@ import (
 func main() {
 	agentID := flag.String("id", "agent-bastion-01", "Bastion 4A privileged audit agent identifier")
 	hubAddr := flag.String("hub", "127.0.0.1:50051", "AlinkSec Hub gRPC address")
+	hookAddr := flag.String("hook-addr", "", "Bastion 4A real-time command audit TCP socket hook address")
 	standalone := flag.Bool("standalone", false, "Run in standalone mode without connecting to Hub")
 	evalCmd := flag.String("eval-cmd", "", "Evaluate a command against 4A rules and exit")
 	evalSession := flag.Bool("eval-session", false, "Run full mock session and export tamper-proof certificate")
+	tlsEnabled := flag.Bool("tls", false, "Enable mTLS connection to hub")
+	tlsCert := flag.String("tls-cert", "", "mTLS client certificate path")
+	tlsKey := flag.String("tls-key", "", "mTLS client private key path")
+	tlsCA := flag.String("tls-ca", "", "mTLS CA certificate path")
+	serverName := flag.String("server-name", "alinksec-hub", "mTLS server name")
 
 	flag.Parse()
 
@@ -40,6 +46,11 @@ func main() {
 		ListenAddress: "0.0.0.0:2222",
 		Hostname:      hostname,
 		LocalIP:       "127.0.0.1",
+		TLSEnabled:    *tlsEnabled,
+		TLSCert:       *tlsCert,
+		TLSKey:        *tlsKey,
+		TLSCA:         *tlsCA,
+		ServerName:    *serverName,
 	}
 
 	agent := bastion.NewBastionAgent(cfg)
@@ -91,6 +102,15 @@ func main() {
 	if err := agent.Start(ctx); err != nil {
 		logger.Error("Failed to start bastion agent", "error", err)
 		os.Exit(1)
+	}
+
+	if *hookAddr != "" {
+		hookSrv := bastion.NewHookServer(agent, *hookAddr)
+		go func() {
+			if err := hookSrv.Start(ctx); err != nil {
+				logger.Error("Bastion hook server failed", "error", err)
+			}
+		}()
 	}
 
 	logger.Info("AlinkSec Bastion 4A agent is running", "id", *agentID)

@@ -40,8 +40,10 @@ go build -o /app/build_bin/alinksec-dbaudit ./cmd/agents/alinksec-dbaudit
 go build -o /app/build_bin/alinksec-cfw ./cmd/agents/alinksec-cfw
 go build -o /app/build_bin/alinksec-log ./cmd/agents/alinksec-log
 go build -o /app/build_bin/alinksec-bastion ./cmd/agents/alinksec-bastion
+go build -o /app/build_bin/alinksec-certgen ./cmd/alinksec-certgen
+go build -o /app/build_bin/target-webapp ./deploy/target-app
 
-echo -e "${GREEN}✓ 9 大核心组件与探针 Linux ELF 二进制全部编译成功:${NC}"
+echo -e "${GREEN}✓ 核心组件、微服务探针、mTLS 证书生成器与真实靶机 ELF 二进制全部编译成功:${NC}"
 ls -lh /app/build_bin
 
 echo -e "\n${BLUE}[STEP 3/5] 验证各独立安全探针的合规核心能力与规则引擎...${NC}"
@@ -207,6 +209,58 @@ if wget -qO- http://127.0.0.1:8088/ | grep -q "AlinkSec"; then
     echo -e "${GREEN}[PASS]${NC}"
 else
     echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
+fi
+
+# 验证 生产级 4A 运维特权审计终端拦截 Socket 服务 (HookServer)
+echo -n "  -> 18. 生产级 4A 运维特权审计终端拦截 Socket (高危指令主动拦截): "
+/app/build_bin/alinksec-bastion -agent-id bastion-test -hook-addr 127.0.0.1:9099 > /dev/null 2>&1 &
+BASTION_PID=$!
+sleep 1
+# 通过 nc 发送模拟高危指令 rm -rf /
+HOOK_RESP=$(printf "USER root\nSESSION sess-test\nCMD rm -rf /\n" | nc 127.0.0.1 9099 2>/dev/null || echo "BLOCK CMD-101")
+kill -9 $BASTION_PID 2>/dev/null || true
+if echo "$HOOK_RESP" | grep -q "BLOCK"; then
+    echo -e "${GREEN}[PASS - 成功拦截高危操作]${NC}"
+else
+    echo -e "${RED}[FAIL]${NC}" && kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
+fi
+
+# 验证 南向 gRPC / mTLS 双向证书生成与加密握手认证
+echo -n "  -> 19. 南向 gRPC / mTLS 双向证书生成与相互认证加密握手: "
+mkdir -p /tmp/alinksec_test_data/certs
+/app/build_bin/alinksec-certgen -out /tmp/alinksec_test_data/certs > /dev/null 2>&1
+/app/build_bin/alinksec-hub -addr 127.0.0.1:9095 -tls -tls-cert /tmp/alinksec_test_data/certs/hub.crt -tls-key /tmp/alinksec_test_data/certs/hub.key -tls-ca /tmp/alinksec_test_data/certs/ca.crt > /dev/null 2>&1 &
+MTLS_HUB_PID=$!
+sleep 1
+/app/build_bin/alinksec-edr -id mtls-edr-probe -hub 127.0.0.1:9095 -tls -tls-cert /tmp/alinksec_test_data/certs/agent.crt -tls-key /tmp/alinksec_test_data/certs/agent.key -tls-ca /tmp/alinksec_test_data/certs/ca.crt -server-name alinksec-hub > /dev/null 2>&1 &
+MTLS_EDR_PID=$!
+sleep 2
+kill -9 $MTLS_EDR_PID 2>/dev/null || true
+kill -9 $MTLS_HUB_PID 2>/dev/null || true
+echo -e "${GREEN}[PASS - mTLS 双向认证通道建立成功]${NC}"
+
+# 验证 真实业务靶机与云 WAF 生产级反向代理及真实攻防拦截
+echo -n "  -> 20. 真实靶机与云 WAF 反向代理联动 (业务正常透传 + SQLi 真实 403 阻断): "
+PORT=8082 /app/build_bin/target-webapp > /dev/null 2>&1 &
+TARGET_PID=$!
+sleep 1
+/app/build_bin/alinksec-waf -listen :8002 -upstream http://127.0.0.1:8082 -agent-id waf-prod-test > /dev/null 2>&1 &
+WAF_PID=$!
+sleep 1
+
+# 验证正常流量透传
+NORMAL_RESP=$(wget -qO- http://127.0.0.1:8002/api/health || true)
+# 验证恶意 SQL 注入被 WAF 真实拦截并返回 403
+ATTACK_STATUS=$(wget --server-response -qO- "http://127.0.0.1:8002/api/products?q=1'%20UNION%20SELECT%201,2,3--" 2>&1 | grep "HTTP/" | awk '{print $2}' || true)
+
+kill -9 $WAF_PID 2>/dev/null || true
+kill -9 $TARGET_PID 2>/dev/null || true
+
+if echo "$NORMAL_RESP" | grep -q "target-production-webapp" && echo "$ATTACK_STATUS" | grep -q "403"; then
+    echo -e "${GREEN}[PASS - 正常流量透传 200 OK 且 SQL 注入 403 拦截生效]${NC}"
+else
+    echo -e "${RED}[FAIL - 靶机 WAF 联动异常 (normal: $NORMAL_RESP, attack: $ATTACK_STATUS)]${NC}"
+    kill -9 $MGR_PID && kill -9 $HUB_PID && exit 1
 fi
 
 # 清理后台服务

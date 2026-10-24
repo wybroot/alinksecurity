@@ -21,6 +21,11 @@ func main() {
 	hubAddr := flag.String("hub", "127.0.0.1:9090", "AlinkSec Hub gRPC address")
 	standalone := flag.Bool("standalone", false, "Run in standalone mode without hub")
 	testSQL := flag.String("test-sql", "", "Evaluate a specific SQL statement and output audit result in JSON, then exit")
+	tlsEnabled := flag.Bool("tls", false, "Enable mTLS connection to hub")
+	tlsCert := flag.String("tls-cert", "", "mTLS client certificate path")
+	tlsKey := flag.String("tls-key", "", "mTLS client private key path")
+	tlsCA := flag.String("tls-ca", "", "mTLS CA certificate path")
+	serverName := flag.String("server-name", "alinksec-hub", "mTLS server name")
 
 	flag.Parse()
 
@@ -48,6 +53,11 @@ func main() {
 		Protocol:     dbaudit.DBProtocol(*proto),
 		HeartbeatSec: 5 * time.Second,
 		Standalone:   *standalone,
+		TLSEnabled:   *tlsEnabled,
+		TLSCert:      *tlsCert,
+		TLSKey:       *tlsKey,
+		TLSCA:        *tlsCA,
+		ServerName:   *serverName,
 	}
 
 	agent := dbaudit.NewDBAuditAgent(cfg)

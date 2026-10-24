@@ -19,6 +19,11 @@ func main() {
 	standalone := flag.Bool("standalone", false, "Run in standalone mode")
 	genProof := flag.Bool("gen-proof", false, "Generate MLPS3 180-day log retention compliance proof and exit")
 	simDays := flag.Int("sim-days", 185, "Simulation span of days for retention proof")
+	tlsEnabled := flag.Bool("tls", false, "Enable mTLS connection to hub")
+	tlsCert := flag.String("tls-cert", "", "mTLS client certificate path")
+	tlsKey := flag.String("tls-key", "", "mTLS client private key path")
+	tlsCA := flag.String("tls-ca", "", "mTLS CA certificate path")
+	serverName := flag.String("server-name", "alinksec-hub", "mTLS server name")
 
 	flag.Parse()
 
@@ -45,6 +50,11 @@ func main() {
 		HubAddr:      *hubAddr,
 		HeartbeatSec: 5 * time.Second,
 		Standalone:   *standalone,
+		TLSEnabled:   *tlsEnabled,
+		TLSCert:      *tlsCert,
+		TLSKey:       *tlsKey,
+		TLSCA:        *tlsCA,
+		ServerName:   *serverName,
 	}
 
 	agent := logaudit.NewLogAgent(cfg)

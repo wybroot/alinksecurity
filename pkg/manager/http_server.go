@@ -22,6 +22,7 @@ import (
 	"alinksec/pkg/logger"
 	"alinksec/pkg/simulator"
 	"alinksec/pkg/soar"
+	"alinksec/pkg/storage"
 	"os"
 )
 
@@ -43,12 +44,19 @@ type HTTPServer struct {
 	soarEngine    *soar.SOAREngine
 	assetMgr      *asset.Manager
 	alertDisp     *alert.Dispatcher
+	storage       storage.StorageEngine
+	chWriter      *storage.ClickHouseWriter
 	jwtSecret     []byte
 	mux           *http.ServeMux
 }
 
-// NewHTTPServer 初始化管理后台 HTTP 服务
+// NewHTTPServer 初始化管理后台 HTTP 服务 (默认内存存储，向后兼容)
 func NewHTTPServer(jwtSecret []byte) *HTTPServer {
+	return NewProductionHTTPServer(jwtSecret, storage.NewMemoryStorage(), nil)
+}
+
+// NewProductionHTTPServer 初始化生产级管理后台 HTTP 服务 (支持 PostgreSQL 与 ClickHouse 真实持久化)
+func NewProductionHTTPServer(jwtSecret []byte, store storage.StorageEngine, chWriter *storage.ClickHouseWriter) *HTTPServer {
 	if len(jwtSecret) == 0 {
 		jwtSecret = []byte("alinksec-default-jwt-secret-key-32b")
 	}
@@ -70,6 +78,8 @@ func NewHTTPServer(jwtSecret []byte) *HTTPServer {
 		soarEngine:    soar.NewSOAREngine(),
 		assetMgr:      asset.NewManager(),
 		alertDisp:     alert.NewDispatcher(5 * time.Minute),
+		storage:       store,
+		chWriter:      chWriter,
 		jwtSecret:     jwtSecret,
 		mux:           http.NewServeMux(),
 	}
@@ -480,9 +490,27 @@ func (s *HTTPServer) handleIndex(w http.ResponseWriter, r *http.Request) {
 	w.Write(content)
 }
 
-// handleDashboardOverview 返回态势大屏实时指标
+// handleDashboardOverview 返回态势大屏实时指标 (打通真实数据库统计)
 func (s *HTTPServer) handleDashboardOverview(w http.ResponseWriter, r *http.Request) {
 	overview := s.dashboardSvc.GetOverview()
+	if s.storage != nil {
+		if agents, err := s.storage.ListAgents(r.Context()); err == nil && len(agents) > 0 {
+			onlineCount := 0
+			for _, a := range agents {
+				if a.Status == "online" {
+					onlineCount++
+				}
+			}
+			overview.TotalAgents = len(agents)
+			overview.OnlineAgents = onlineCount
+		}
+	}
+	if s.chWriter != nil {
+		if count, err := s.chWriter.QueryEventCount(); err == nil && count > 0 {
+			overview.TotalThreatsToday = int(count)
+			overview.BlockedThreatsToday = int(count)
+		}
+	}
 	s.writeJSON(w, http.StatusOK, overview)
 }
 
@@ -536,8 +564,30 @@ func (s *HTTPServer) handleQuickSwitch(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleListAgents 返回全部探针资产纳管状态
+// handleListAgents 返回全部探针资产纳管状态 (打通真实数据库)
 func (s *HTTPServer) handleListAgents(w http.ResponseWriter, r *http.Request) {
+	if s.storage != nil {
+		agents, err := s.storage.ListAgents(r.Context())
+		if err == nil && len(agents) > 0 {
+			var resp []map[string]any
+			for _, a := range agents {
+				resp = append(resp, map[string]any{
+					"agent_id":            a.AgentID,
+					"type":                a.AgentTypeStr,
+					"hostname":            a.Hostname,
+					"ip":                  a.IP,
+					"status":              a.Status,
+					"version":             a.Version,
+					"cpu_percent":         a.CPUUsage,
+					"memory_mb":           float64(a.MemoryUsedBytes) / (1024 * 1024),
+					"active_rules":        a.ActiveRulesCount,
+					"last_heartbeat_time": a.LastHeartbeatTime.Format(time.RFC3339),
+				})
+			}
+			s.writeJSON(w, http.StatusOK, resp)
+			return
+		}
+	}
 	overview := s.dashboardSvc.GetOverview()
 	s.writeJSON(w, http.StatusOK, overview.Agents)
 }
@@ -565,12 +615,41 @@ func (s *HTTPServer) handleSyncAgent(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// handleListSecurityEvents 返回安全威胁事件
+// handleListSecurityEvents 返回安全威胁事件 (打通 ClickHouse 真实事件库)
 func (s *HTTPServer) handleListSecurityEvents(w http.ResponseWriter, r *http.Request) {
 	component := r.URL.Query().Get("component")
 	severity := r.URL.Query().Get("severity")
-	events := s.dashboardSvc.GetOverview().RecentEvents
 
+	if s.chWriter != nil {
+		chEvents, err := s.chWriter.QueryRecentEvents(100)
+		if err == nil && len(chEvents) > 0 {
+			var filtered []map[string]any
+			for _, evt := range chEvents {
+				if component != "" && evt.SourceType != component {
+					continue
+				}
+				if severity != "" && evt.Level != severity {
+					continue
+				}
+				filtered = append(filtered, map[string]any{
+					"event_id":     evt.EventID,
+					"timestamp":    evt.EventTime.Format(time.RFC3339),
+					"component":    evt.SourceType,
+					"severity":     evt.Level,
+					"source_ip":    evt.HostIP,
+					"target_ip":    "127.0.0.1",
+					"threat_type":  evt.Category,
+					"action_taken": "BLOCKED",
+					"payload":      evt.RawPayload,
+					"chain_hash":   evt.ChainHash,
+				})
+			}
+			s.writeJSON(w, http.StatusOK, filtered)
+			return
+		}
+	}
+
+	events := s.dashboardSvc.GetOverview().RecentEvents
 	var filtered []dashboard.ThreatEventSummary
 	for _, evt := range events {
 		if component != "" && evt.Component != component {

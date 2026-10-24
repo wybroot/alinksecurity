@@ -10,9 +10,9 @@ import (
 
 	pb "alinksec/api/proto/v1"
 	"alinksec/pkg/crypto"
+	"alinksec/pkg/crypto/tlsutil"
 	"alinksec/pkg/logger"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // WAFMetrics 运行度量指标
@@ -34,6 +34,11 @@ type Config struct {
 	AgentID     string `json:"agent_id"`     // WAF 探针唯一标识
 	HubAddr     string `json:"hub_addr"`     // 安全中枢 gRPC 地址 (可选，留空则完全离线独立运行)
 	MaxCCLimit  int    `json:"max_cc_limit"` // CC 频控上限 (10秒内次数)
+	TLSEnabled  bool   `json:"tls_enabled"`
+	TLSCert     string `json:"tls_cert"`
+	TLSKey      string `json:"tls_key"`
+	TLSCA       string `json:"tls_ca"`
+	ServerName  string `json:"server_name"`
 }
 
 // Agent WAF 实例
@@ -173,7 +178,7 @@ func (a *Agent) handleThreatEvent(clientIP, method, uri string, result MatchResu
 }
 
 func (a *Agent) connectHub(ctx context.Context) error {
-	conn, err := grpc.DialContext(ctx, a.cfg.HubAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := tlsutil.DialHub(ctx, a.cfg.HubAddr, a.cfg.TLSEnabled, a.cfg.TLSCert, a.cfg.TLSKey, a.cfg.TLSCA, a.cfg.ServerName)
 	if err != nil {
 		return err
 	}

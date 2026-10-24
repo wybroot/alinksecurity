@@ -21,6 +21,11 @@ func main() {
 		heartbeatInterval = flag.Duration("heartbeat-interval", 10*time.Second, "Heartbeat interval")
 		baselineInterval  = flag.Duration("baseline-interval", 30*time.Minute, "Baseline audit interval")
 		auditOnly         = flag.Bool("audit-only", false, "Run single baseline audit and print report, then exit")
+		tlsEnabled        = flag.Bool("tls", false, "Enable mTLS connection to hub")
+		tlsCert           = flag.String("tls-cert", "", "mTLS client certificate path")
+		tlsKey            = flag.String("tls-key", "", "mTLS client private key path")
+		tlsCA             = flag.String("tls-ca", "", "mTLS CA certificate path")
+		serverName        = flag.String("server-name", "alinksec-hub", "mTLS server name")
 	)
 	flag.Parse()
 
@@ -34,6 +39,11 @@ func main() {
 		HubAddr:           *hubAddr,
 		HeartbeatInterval: *heartbeatInterval,
 		BaselineInterval:  *baselineInterval,
+		TLSEnabled:        *tlsEnabled,
+		TLSCert:           *tlsCert,
+		TLSKey:            *tlsKey,
+		TLSCA:             *tlsCA,
+		ServerName:        *serverName,
 	}
 
 	agent := edr.NewAgent(cfg)

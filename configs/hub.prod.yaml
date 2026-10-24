@@ -1,0 +1,44 @@
+# ==============================================================================
+# AlinkSec Hub (南向安全中枢) 生产级生产环境配置
+# 遵循 GB/T 22239-2019 等保 2.0 三级标准
+# ==============================================================================
+
+server:
+  grpc_port: 50051
+  listen_addr: "0.0.0.0:50051"
+  tls:
+    enabled: false # 若生产环境配置 mTLS，请指定以下路径
+    ca_cert: "/opt/alinksec/certs/ca.crt"
+    server_cert: "/opt/alinksec/certs/hub.crt"
+    server_key: "/opt/alinksec/certs/hub.key"
+
+storage:
+  engine: "postgres" # postgres | memory
+  postgres:
+    dsn: "postgres://alinksec:AlinkSec@2026!@postgres:5432/alinksec_db?sslmode=disable"
+    max_open_conns: 50
+    max_idle_conns: 10
+    conn_max_lifetime: "10m"
+
+event_storage:
+  engine: "clickhouse"
+  clickhouse:
+    url: "http://clickhouse:8123"
+    database: "alinksec"
+    batch_size: 200
+    flush_interval: "1s"
+    retention_days: 180 # 严格遵循等保三级日志留存 >= 180 天红线
+
+message_bus:
+  type: "nats" # nats | memory
+  nats:
+    url: "nats://nats:4222"
+    cluster_id: "alinksec-cluster"
+
+watchdog:
+  heartbeat_timeout: "30s"
+  check_interval: "10s"
+
+logging:
+  level: "info"
+  format: "json"

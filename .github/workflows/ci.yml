@@ -2,9 +2,9 @@ name: AlinkSec Modular MLPS3 Security Matrix CI
 
 on:
   push:
-    branches: [ "main", "master", "dev" ]
+    branches: [ "main", "master", "dev", "feature/**" ]
   pull_request:
-    branches: [ "main", "master" ]
+    branches: [ "main", "master", "feature/**" ]
 
 jobs:
   lint-and-test:
@@ -60,6 +60,8 @@ jobs:
           go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-cfw ./cmd/agents/alinksec-cfw
           go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-log ./cmd/agents/alinksec-log
           go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-bastion ./cmd/agents/alinksec-bastion
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/alinksec-certgen ./cmd/alinksec-certgen
+          go build -ldflags="-s -w" -o dist/linux_${{ matrix.arch }}/target-webapp ./deploy/target-app
           ls -lh dist/linux_${{ matrix.arch }}
 
   container-e2e:

@@ -11,9 +11,9 @@ import (
 	"time"
 
 	pb "alinksec/api/proto/v1"
+	"alinksec/pkg/crypto/tlsutil"
 	"alinksec/pkg/logger"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // AgentConfig 微隔离防火墙探针配置
@@ -23,6 +23,11 @@ type AgentConfig struct {
 	HubAddr      string        `json:"hub_addr"`
 	HeartbeatSec time.Duration `json:"heartbeat_sec"`
 	Standalone   bool          `json:"standalone"`
+	TLSEnabled   bool          `json:"tls_enabled"`
+	TLSCert      string        `json:"tls_cert"`
+	TLSKey       string        `json:"tls_key"`
+	TLSCA        string        `json:"tls_ca"`
+	ServerName   string        `json:"server_name"`
 }
 
 // CFWAgent 微隔离与云防火墙探针
@@ -143,7 +148,7 @@ func (a *CFWAgent) GetMetrics() (evaluated, dropped uint64) {
 }
 
 func (a *CFWAgent) connectAndRegisterHub() error {
-	conn, err := grpc.DialContext(a.ctx, a.cfg.HubAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := tlsutil.DialHub(a.ctx, a.cfg.HubAddr, a.cfg.TLSEnabled, a.cfg.TLSCert, a.cfg.TLSKey, a.cfg.TLSCA, a.cfg.ServerName)
 	if err != nil {
 		return err
 	}

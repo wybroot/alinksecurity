@@ -1,0 +1,20 @@
+# ==============================================================================
+# AlinkSec Web Tamper-Proof 生产级配置
+# ==============================================================================
+agent_id: "tamper-prod-node-01"
+hub_addr: "alinksec-hub:50051"
+watch_dir: "/var/www/html"
+backup_vault_dir: "/var/alinksec/vault"
+auto_revert: true
+maintenance_mode: false
+extensions:
+  - ".html"
+  - ".htm"
+  - ".js"
+  - ".css"
+  - ".php"
+  - ".jsp"
+  - ".png"
+  - ".jpg"
+logging:
+  level: "info"

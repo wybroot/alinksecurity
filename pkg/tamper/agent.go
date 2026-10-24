@@ -11,9 +11,9 @@ import (
 
 	pb "alinksec/api/proto/v1"
 	"alinksec/pkg/crypto"
+	"alinksec/pkg/crypto/tlsutil"
 	"alinksec/pkg/logger"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Agent 网页防篡改微探针
@@ -165,7 +165,7 @@ func (a *Agent) heartbeatLoop(ctx context.Context) {
 }
 
 func (a *Agent) connectHub(ctx context.Context) error {
-	conn, err := grpc.DialContext(ctx, a.cfg.HubAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := tlsutil.DialHub(ctx, a.cfg.HubAddr, a.cfg.TLSEnabled, a.cfg.TLSCert, a.cfg.TLSKey, a.cfg.TLSCA, a.cfg.ServerName)
 	if err != nil {
 		return err
 	}

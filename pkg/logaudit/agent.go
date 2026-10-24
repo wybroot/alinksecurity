@@ -11,9 +11,9 @@ import (
 	"time"
 
 	pb "alinksec/api/proto/v1"
+	"alinksec/pkg/crypto/tlsutil"
 	"alinksec/pkg/logger"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // AgentConfig 日志审计探针配置
@@ -24,6 +24,11 @@ type AgentConfig struct {
 	HeartbeatSec time.Duration `json:"heartbeat_sec"`
 	Standalone   bool          `json:"standalone"`
 	WatchFiles   []string      `json:"watch_files"`
+	TLSEnabled   bool          `json:"tls_enabled"`
+	TLSCert      string        `json:"tls_cert"`
+	TLSKey       string        `json:"tls_key"`
+	TLSCA        string        `json:"tls_ca"`
+	ServerName   string        `json:"server_name"`
 }
 
 // LogAgent 统一日志审计轻量探针
@@ -161,7 +166,7 @@ func (a *LogAgent) handleBatch(batch *LogBatch) {
 }
 
 func (a *LogAgent) connectAndRegisterHub() error {
-	conn, err := grpc.DialContext(a.ctx, a.cfg.HubAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := tlsutil.DialHub(a.ctx, a.cfg.HubAddr, a.cfg.TLSEnabled, a.cfg.TLSCert, a.cfg.TLSKey, a.cfg.TLSCA, a.cfg.ServerName)
 	if err != nil {
 		return err
 	}
